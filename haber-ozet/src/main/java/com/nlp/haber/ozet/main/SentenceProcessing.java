@@ -1,24 +1,28 @@
 package com.nlp.haber.ozet.main;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import zemberek.morphology.TurkishMorphology;
 import zemberek.morphology.analysis.SingleAnalysis;
 import zemberek.morphology.analysis.WordAnalysis;
 import zemberek.tokenization.Token;
-import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
 
 public class SentenceProcessing {
@@ -29,23 +33,26 @@ public class SentenceProcessing {
 	public static HashMap<String, Integer> scoreMap = new HashMap<String, Integer>();
 	public static HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
 
+	public SentenceProcessing() {
+
+	}
+
 	public SentenceProcessing(String title, String sentence, String text) {
 		this.title = title;
 		this.sentence = sentence;
 
-		System.out.println("Title: " + title);
-		System.out.println("Sentence: " + sentence);
 		setScoreMap();
 		addTitleScore(title, sentence);
-		System.out.println("-----------------TITLE SCORE--------------" + score);
-		setWordFrequencyMap(text);
-		frequencyMap = (HashMap<String, Integer>) sortMapByValueDesc(frequencyMap);
+		frequencyMap = TextProcessing.frequencyMap;
 		addFrequencyScore(sentence, frequencyMap);
 		addNumberScore(sentence);
 		addQuotationMarkScore(sentence);
 		addEndingMarkScore(sentence);
 		addDayMonthScore(sentence);
 		addPositiveScore();
+		addNegativeScore();
+		addUppercaseScore();
+
 	}
 
 	public static void setScoreMap() {
@@ -125,51 +132,6 @@ public class SentenceProcessing {
 		}
 	}
 
-	public void setWordFrequencyMap(String text) {
-		TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
-		List<String> sentences = extractor.fromParagraph(text);
-		List<String> allWords = new ArrayList<String>();
-		List<String> stemWords = new ArrayList<String>();
-
-		for (String s : sentences) {
-			for (String word : sentenceToWords(s)) {
-				allWords.add(word);
-			}
-		}
-		allWords = removeStopWords(allWords);
-
-		for (String s : allWords) {
-			stemWords.add(wordToStem(s));
-		}
-
-		for (String w : stemWords) {
-			int counter = 0;
-			for (String string : stemWords) {
-				if (w.compareTo(string) == 0) {
-					counter++;
-				}
-			}
-			frequencyMap.put(w, counter);
-		}
-
-	}
-
-	public static Map<String, Integer> sortMapByValueDesc(Map<String, Integer> map) {
-		List list = new LinkedList(map.entrySet());
-		Collections.sort(list, new Comparator() {
-			public int compare(Object o1, Object o2) {
-				return ((Comparable) ((Map.Entry) (o1)).getValue()).compareTo(((Map.Entry) (o2)).getValue());
-			}
-		});
-		Collections.reverse(list);
-		Map<String, Integer> result = new LinkedHashMap<String, Integer>();
-		for (Iterator it = list.iterator(); it.hasNext();) {
-			Map.Entry<String, Integer> entry = (Map.Entry) it.next();
-			result.put(entry.getKey(), entry.getValue());
-		}
-		return result;
-	}
-
 	public void addFrequencyScore(String sentence, HashMap<String, Integer> frequencyMap) {
 
 		List<String> words = sentenceToWords(sentence);
@@ -180,12 +142,6 @@ public class SentenceProcessing {
 		for (String string : words) {
 			System.out.println(string);
 		}
-
-		System.out.println("--------------frequence words-----------------------");
-
-		frequencyMap.entrySet().forEach(entry -> {
-			System.out.println("WORD: " + entry.getKey() + " FREQUENCE: " + entry.getValue());
-		});
 
 		System.out.println("-------------------------------------");
 		System.out.println("size: " + frequencyMap.size());
@@ -206,13 +162,14 @@ public class SentenceProcessing {
 		for (String word : words) {
 			for (String key : keys) {
 				if (key.compareTo(word) == 0) {
-					System.out.println("common word: " + word);
-					// counter++;
 					commonWords.add(word);
 				}
 			}
 		}
 		counter = commonWords.size();
+		for (String cw : commonWords) {
+			System.out.println("common word: " + cw);
+		}
 
 		if (counter > 0) {
 			score += counter * (scoreMap.get("frequency")); // Baslikta gecen kelimelerin degeri scoremapten alinir.
@@ -263,70 +220,105 @@ public class SentenceProcessing {
 		String[] searchWords = new String[] { "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos",
 				"Eylül", "Ekim", "Kasım", "Aralık", "Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma",
 				"Cumartesi" };
-		
-		List <String> words= sentenceToWords(sentence);
-		int counter=0;
+
+		List<String> words = sentenceToWords(sentence);
+		int counter = 0;
 		for (String w : words) {
 			for (String sw : searchWords) {
-				if (w.compareTo(sw)==0) {
+				if (w.compareTo(sw) == 0) {
 					counter++;
 				}
 			}
 		}
-		score+=counter * (scoreMap.get("dayMonth"));
+		score += counter * (scoreMap.get("dayMonth"));
 	}
-	
+
 	public void addPositiveScore() {
-		String[] searchWords = new String[] {"özetle", "sonuç", "neticede", "sonuçta", "özetle","kısaca"};
-		
-		List <String> words= sentenceToWords(sentence);
-		int counter=0;
+		String[] searchWords = new String[] { "özetle", "sonuç", "neticede", "sonuçta", "önemlisi", "kısaca" };
+
+		List<String> words = sentenceToWords(sentence);
+		int counter = 0;
 		for (String w : words) {
 			for (String sw : searchWords) {
-				if (w.toLowerCase().compareTo(sw)==0) {
+				if (w.toLowerCase().compareTo(sw) == 0) {
 					counter++;
 				}
 			}
 		}
-		score+=counter * (scoreMap.get("positive"));
-		
+		score += counter * (scoreMap.get("positive"));
+
 	}
-	
+
 	public void addNegativeScore() {
-		String[] searchWords = new String[] {"çünkü", "ancak", "öyleyse", "öyle"};
-		
-		List <String> words= sentenceToWords(sentence);
-		int counter=0;
+		String[] searchWords = new String[] { "çünkü", "ancak", "öyleyse", "öyle" };
+
+		List<String> words = sentenceToWords(sentence);
+		int counter = 0;
 		for (String w : words) {
 			for (String sw : searchWords) {
-				if (w.toLowerCase().compareTo(sw)==0) {
+				if (w.toLowerCase().compareTo(sw) == 0) {
 					counter++;
 				}
 			}
 		}
-		score+=counter * (scoreMap.get("negative"));
-		
+		score += counter * (scoreMap.get("negative"));
+
 	}
-	
+
+	private String readAll(Reader rd) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		int cp;
+		while ((cp = rd.read()) != -1) {
+			sb.append((char) cp);
+		}
+		return sb.toString();
+	}
+
+	public JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+		InputStream is = new URL(url).openStream();
+		try {
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+			String jsonText = readAll(rd);
+			jsonText = jsonText.substring(1, jsonText.length() - 1);
+
+			if (jsonText.compareTo("\"error\":\"Sonuç bulunamadı\"") == 0) {
+				jsonText = "{" + jsonText + "}";
+			}
+			JSONObject json = new JSONObject(jsonText);
+			return json;
+		} finally {
+			is.close();
+		}
+	}
+
 	public void addUppercaseScore() {
-		List <String> words= sentenceToWords(sentence);
-		int counter=0;
-		
-		
-		for (int i=1; i<words.size(); i++) {
+		List<String> words = sentenceToWords(sentence);
+
+		JSONObject json;
+		try {
+
+			if (Character.isLetter(words.get(0).charAt(0))) {
+				json = readJsonFromUrl("http://sozluk.gov.tr/gts?ara=" + words.get(0).toLowerCase());
+				if (json.has("ozel_mi")) {
+					if (Integer.parseInt(json.get("ozel_mi").toString()) == 1) {
+						score += scoreMap.get("uppercase");
+					}
+				}
+
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		for (int i = 1; i < words.size(); i++) {
 			if (Character.isUpperCase(words.get(i).charAt(0))) {
-				score+= counter * (scoreMap.get("uppercase"));
+				score += (scoreMap.get("uppercase"));
 			}
 		}
-		
-		
-		
-		
+
 	}
-	
-	
-	
-	
-	
-	
+
 }

@@ -1,18 +1,16 @@
 package com.nlp.haber.ozet.main;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
-import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.json.JSONException;
-import org.json.JSONObject;
+
 import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
 
@@ -21,6 +19,7 @@ public class TextProcessing {
 	public static HashMap<String, Integer> map = new HashMap<String, Integer>();
 	public static HashMap<String, Integer> scoreMap = new HashMap<String, Integer>();
 	static TurkishTokenizer tokenizer = TurkishTokenizer.DEFAULT;
+	public static HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
 
 	public static void setScoreMap() {
 		scoreMap.put("title", 20);
@@ -58,11 +57,58 @@ public class TextProcessing {
 		for (Entry<String, Integer> entry : map.entrySet()) {
 			SentenceProcessing processing = new SentenceProcessing(title, entry.getKey(), text);
 			map.replace(entry.getKey(), processing.getSentenceScore());
-			System.out.println("SCORE: " + processing.getSentenceScore());
 		}
 
 	}
 
+	public static Map<String, Integer> sortMapByValueDesc(Map<String, Integer> map) {
+		List list = new LinkedList(map.entrySet());
+		Collections.sort(list, new Comparator() {
+			public int compare(Object o1, Object o2) {
+				return ((Comparable) ((Map.Entry) (o1)).getValue()).compareTo(((Map.Entry) (o2)).getValue());
+			}
+		});
+		Collections.reverse(list);
+		Map<String, Integer> result = new LinkedHashMap<String, Integer>();
+		for (Iterator it = list.iterator(); it.hasNext();) {
+			Map.Entry<String, Integer> entry = (Map.Entry) it.next();
+			result.put(entry.getKey(), entry.getValue());
+		}
+		return result;
+	}
+	
+	public static void setWordFrequencyMap(String text) {
+		TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
+		List<String> sentences = extractor.fromParagraph(text);
+		List<String> allWords = new ArrayList<String>();
+		List<String> stemWords = new ArrayList<String>();
+
+		SentenceProcessing sp = new SentenceProcessing();
+				
+		for (String s : sentences) {
+			for (String word : sp.sentenceToWords(s)) {
+				allWords.add(word);
+			}
+		}
+		allWords = sp.removeStopWords(allWords);
+
+		for (String s : allWords) {
+			stemWords.add(sp.wordToStem(s));
+		}
+
+		for (String w : stemWords) {
+			int counter = 0;
+			for (String string : stemWords) {
+				if (w.compareTo(string) == 0) {
+					counter++;
+				}
+			}
+			frequencyMap.put(w, counter);
+		}
+
+		frequencyMap = (HashMap<String, Integer>) sortMapByValueDesc(frequencyMap);
+	}
+	
 	public static void addAverageLengthScore() {
 		int counter = map.size();
 		int sum = 0;
@@ -80,59 +126,32 @@ public class TextProcessing {
 		}
 	}
 
-	/*
-	 * public static void main(String[] args) { String title =
-	 * "Konunun Belirlenmesi "; String text =
-	 * "Konu belirleme aş amasının amacı parçadaki en önemli konuların belirlenmesini sağlamaktır. Bunu sağlamak için kelime frekanslarının hesaplanması, cümlenin bulunduğu yerin incelenmesi, ipucu veren ifadelerden yararlanılması gibi teknikler kullanılır. Bazı yazı tiplerinde, yazının başlığı, yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili en önemli konuları barındırabilirler. \"Özetle\", \"En önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir. Ayrıca çok sıkça kullanılan kelimeler, edat veya belirteç olmadıkları sürece, içinde bulundukları cümlelerin önemli olduklarını gösterebilirler."
-	 * ;
-	 * 
-	 * splitToSentences(text); addAverageLengthScore();
-	 * 
-	 * System.out.
-	 * println("------------------SENTENCE SCORES------------------------------");
-	 * setSentenceScores(title, text);
-	 * 
-	 * map.entrySet().forEach(entry -> { System.out.println("WORD: " +
-	 * entry.getKey() + " SCORE: " + entry.getValue()); });
-	 * 
-	 * }
-	 */
-
-	private static String readAll(Reader rd) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		int cp;
-		while ((cp = rd.read()) != -1) {
-			sb.append((char) cp);
-		}
-		return sb.toString();
-	}
-
-	public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-		InputStream is = new URL(url).openStream();
-		try {
-			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-			String jsonText = readAll(rd);
-			jsonText = jsonText.substring(1, jsonText.length() - 1);
-			JSONObject json = new JSONObject(jsonText);
-			return json;
-		} finally {
-			is.close();
-		}
-	}
-
 	public static void main(String[] args) {
-		JSONObject json;
-		try {
-			json = readJsonFromUrl("http://sozluk.gov.tr/gts?ara=istanbul");
-			System.out.println(json.get("ozel_mi"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		String title = "Konunun Belirlenmesi ";
+		String text = "Konu belirleme aş amasının 15 amacı parçadaki Mayıs en önemli konuların belirlenmesini sağlamaktır."
+				+ " Bunu sağlamak için kelime frekanslarının hesaplanması, cümlenin bulunduğu yerin incelenmesi, "
+				+ "ipucu veren ifadelerden yararlanılması gibi Teknikler kullanılır. Bazı yazı tiplerinde, yazının başlığı, "
+				+ "yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili çünkü en önemli konuları barındırabilirler. "
+				+ "\"Özetle\", \"En önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir? "
+				+ "İstanbul çok sıkça kullanılan kelimeler, edat veya belirteç olmadıkları sürece, içinde bulundukları cümlelerin önemli olduklarını gösterebilirler.";
+
+		splitToSentences(text);
+		addAverageLengthScore();
+
 		
+		setWordFrequencyMap(text);
+		 System.out.println("--------------frequence words-----------------------");
+
+			frequencyMap.entrySet().forEach(entry -> {
+				System.out.println("WORD: " + entry.getKey() + " FREQUENCE: " + entry.getValue());
+			});
+			
+		setSentenceScores(title, text);
+
+		map.entrySet().forEach(entry -> {
+			System.out.println("SENTENCE: " + entry.getKey() + " SCORE: " + entry.getValue());
+		});
+
 	}
 
 }
