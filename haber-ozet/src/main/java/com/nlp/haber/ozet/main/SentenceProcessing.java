@@ -40,9 +40,9 @@ public class SentenceProcessing {
 	public SentenceProcessing(String title, String sentence, String text) {
 		this.title = title;
 		this.sentence = sentence;
-
+		System.out.println(sentence);
 		setScoreMap();
-		addTitleScore(title, sentence);
+			addTitleScore(title, sentence);
 		frequencyMap = TextProcessing.frequencyMap;
 		addFrequencyScore(sentence, frequencyMap);
 		addNumberScore(sentence);
@@ -130,6 +130,8 @@ public class SentenceProcessing {
 		if (counter > 0) {
 			score += counter * (scoreMap.get("title")); // Baslikta gecen kelimelerin degeri scoremapten alinir.
 		}
+
+		System.out.println("Title score: "+ counter * (scoreMap.get("title")));
 	}
 
 	public void addFrequencyScore(String sentence, HashMap<String, Integer> frequencyMap) {
@@ -138,24 +140,10 @@ public class SentenceProcessing {
 		words = removeStopWords(words);
 		words = sentenceStems(words);
 
-		System.out.println("--------------sentence words-----------------------");
-		for (String string : words) {
-			System.out.println(string);
-		}
-
-		System.out.println("-------------------------------------");
-		System.out.println("size: " + frequencyMap.size());
 		int percent = 10;
 		int limit = (frequencyMap.keySet().size() * percent) / 100;
 		List<String> keys = frequencyMap.entrySet().stream().map(Map.Entry::getKey).limit(limit)
 				.collect(Collectors.toList());
-
-		System.out.println("--------------10 percent of frequence words-----------------------");
-		for (String string : keys) {
-			System.out.println(string);
-		}
-
-		System.out.println("--------------common words-----------------------");
 
 		LinkedHashSet<String> commonWords = new LinkedHashSet<String>();
 		int counter = 0;
@@ -167,14 +155,13 @@ public class SentenceProcessing {
 			}
 		}
 		counter = commonWords.size();
-		for (String cw : commonWords) {
-			System.out.println("common word: " + cw);
-		}
 
 		if (counter > 0) {
 			score += counter * (scoreMap.get("frequency")); // Baslikta gecen kelimelerin degeri scoremapten alinir.
 
 		}
+
+		System.out.println("Frequence score: "+counter * (scoreMap.get("frequency")));
 
 	}
 
@@ -185,10 +172,10 @@ public class SentenceProcessing {
 		Matcher m = p.matcher(sentence);
 		while (m.find()) {
 			counter++;
-			System.out.println(m.group());
 		}
 		score += counter * (scoreMap.get("number"));
 
+		System.out.println("Number score: "+counter * (scoreMap.get("number")));
 	}
 
 	public void addQuotationMarkScore(String sentence) {
@@ -198,9 +185,10 @@ public class SentenceProcessing {
 		Matcher m = p.matcher(sentence);
 		while (m.find()) {
 			counter++;
-			System.out.println(m.group());
 		}
 		score += counter * (scoreMap.get("quotationMark"));
+
+		System.out.println("Quotation score: "+counter * (scoreMap.get("quotationMark")));
 
 	}
 
@@ -210,10 +198,11 @@ public class SentenceProcessing {
 		Matcher m = p.matcher(sentence);
 		while (m.find()) {
 			counter++;
-			System.out.println(m.group());
 		}
 		score += counter * (scoreMap.get("quotationMark"));
 
+
+		System.out.println("endingmark score: "+counter * (scoreMap.get("quotationMark")));
 	}
 
 	public void addDayMonthScore(String sentence) {
@@ -231,6 +220,8 @@ public class SentenceProcessing {
 			}
 		}
 		score += counter * (scoreMap.get("dayMonth"));
+
+		System.out.println("dayMonth score: "+counter * (scoreMap.get("dayMonth")));
 	}
 
 	public void addPositiveScore() {
@@ -246,6 +237,7 @@ public class SentenceProcessing {
 			}
 		}
 		score += counter * (scoreMap.get("positive"));
+		System.out.println("positive score: "+counter * (scoreMap.get("positive")));
 
 	}
 
@@ -262,6 +254,7 @@ public class SentenceProcessing {
 			}
 		}
 		score += counter * (scoreMap.get("negative"));
+		System.out.println("negative score: "+counter * (scoreMap.get("negative")));
 
 	}
 
@@ -301,8 +294,17 @@ public class SentenceProcessing {
 				json = readJsonFromUrl("http://sozluk.gov.tr/gts?ara=" + words.get(0).toLowerCase());
 				if (json.has("ozel_mi")) {
 					if (Integer.parseInt(json.get("ozel_mi").toString()) == 1) {
+						
 						score += scoreMap.get("uppercase");
+						System.out.println("uppercase score: "+scoreMap.get("uppercase"));
 					}
+				}
+
+				json = readJsonFromUrl("http://sozluk.gov.tr/adlar?ara=" + words.get(0).toLowerCase()+"&gore=1&cins=4");
+				if (json.has("ad_id")) {
+					score += scoreMap.get("uppercase");
+
+					System.out.println("uppercase score: "+scoreMap.get("uppercase"));
 				}
 
 			}
@@ -313,12 +315,16 @@ public class SentenceProcessing {
 			e.printStackTrace();
 		}
 
+		
 		for (int i = 1; i < words.size(); i++) {
 			if (Character.isUpperCase(words.get(i).charAt(0))) {
 				score += (scoreMap.get("uppercase"));
+				System.out.println("uppercase score: "+scoreMap.get("uppercase"));
 			}
 		}
 
+
+		
 	}
 
 }
