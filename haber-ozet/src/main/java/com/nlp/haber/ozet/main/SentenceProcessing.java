@@ -1,6 +1,8 @@
 package com.nlp.haber.ozet.main;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -8,8 +10,11 @@ import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -32,6 +37,12 @@ public class SentenceProcessing {
 	public int score;
 	public static HashMap<String, Integer> scoreMap = new HashMap<String, Integer>();
 	public static HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
+	public static List<String> yerTamlayanlar = Arrays.asList("dağı", "caddesi", "durağı", "cadde", "durak",
+			"tiyatrosu", "tiyatro", "nehri", "bulvarı", "bulvar", "uyruklu", "devleti", "boğazı", "sarayı", "gölü",
+			"kalesi", "köprüsü", "parkı", "ovası", "meydanı");
+	public static List<String> yerYon = Arrays.asList("Kuzey", "Güney", "Doğu", "Batı");
+	public static LinkedHashSet<String> uppercases = new LinkedHashSet<String>();
+	public static LinkedHashSet<String> ozelIsimler = new LinkedHashSet<String>();
 
 	public SentenceProcessing() {
 
@@ -42,17 +53,16 @@ public class SentenceProcessing {
 		this.sentence = sentence;
 		System.out.println(sentence);
 		setScoreMap();
-			addTitleScore(title, sentence);
-		frequencyMap = TextProcessing.frequencyMap;
-		addFrequencyScore(sentence, frequencyMap);
-		addNumberScore(sentence);
-		addQuotationMarkScore(sentence);
-		addEndingMarkScore(sentence);
-		addDayMonthScore(sentence);
-		addPositiveScore();
-		addNegativeScore();
+		 addTitleScore(title, sentence);
+		 frequencyMap = TextProcessing.frequencyMap;
+		 addFrequencyScore(sentence, frequencyMap);
+		 addNumberScore(sentence);
+		 addQuotationMarkScore(sentence);
+		 addEndingMarkScore(sentence);
+		 addDayMonthScore(sentence);
+		 addPositiveScore();
+		 addNegativeScore();
 		addUppercaseScore();
-
 	}
 
 	public static void setScoreMap() {
@@ -131,7 +141,7 @@ public class SentenceProcessing {
 			score += counter * (scoreMap.get("title")); // Baslikta gecen kelimelerin degeri scoremapten alinir.
 		}
 
-		System.out.println("Title score: "+ counter * (scoreMap.get("title")));
+		System.out.println("Title score: " + counter * (scoreMap.get("title")));
 	}
 
 	public void addFrequencyScore(String sentence, HashMap<String, Integer> frequencyMap) {
@@ -161,7 +171,7 @@ public class SentenceProcessing {
 
 		}
 
-		System.out.println("Frequence score: "+counter * (scoreMap.get("frequency")));
+		System.out.println("Frequence score: " + counter * (scoreMap.get("frequency")));
 
 	}
 
@@ -175,7 +185,7 @@ public class SentenceProcessing {
 		}
 		score += counter * (scoreMap.get("number"));
 
-		System.out.println("Number score: "+counter * (scoreMap.get("number")));
+		System.out.println("Number score: " + counter * (scoreMap.get("number")));
 	}
 
 	public void addQuotationMarkScore(String sentence) {
@@ -188,7 +198,7 @@ public class SentenceProcessing {
 		}
 		score += counter * (scoreMap.get("quotationMark"));
 
-		System.out.println("Quotation score: "+counter * (scoreMap.get("quotationMark")));
+		System.out.println("Quotation score: " + counter * (scoreMap.get("quotationMark")));
 
 	}
 
@@ -201,8 +211,7 @@ public class SentenceProcessing {
 		}
 		score += counter * (scoreMap.get("quotationMark"));
 
-
-		System.out.println("endingmark score: "+counter * (scoreMap.get("quotationMark")));
+		System.out.println("endingmark score: " + counter * (scoreMap.get("quotationMark")));
 	}
 
 	public void addDayMonthScore(String sentence) {
@@ -221,7 +230,7 @@ public class SentenceProcessing {
 		}
 		score += counter * (scoreMap.get("dayMonth"));
 
-		System.out.println("dayMonth score: "+counter * (scoreMap.get("dayMonth")));
+		System.out.println("dayMonth score: " + counter * (scoreMap.get("dayMonth")));
 	}
 
 	public void addPositiveScore() {
@@ -237,7 +246,7 @@ public class SentenceProcessing {
 			}
 		}
 		score += counter * (scoreMap.get("positive"));
-		System.out.println("positive score: "+counter * (scoreMap.get("positive")));
+		System.out.println("positive score: " + counter * (scoreMap.get("positive")));
 
 	}
 
@@ -254,7 +263,7 @@ public class SentenceProcessing {
 			}
 		}
 		score += counter * (scoreMap.get("negative"));
-		System.out.println("negative score: "+counter * (scoreMap.get("negative")));
+		System.out.println("negative score: " + counter * (scoreMap.get("negative")));
 
 	}
 
@@ -284,47 +293,104 @@ public class SentenceProcessing {
 		}
 	}
 
-	public void addUppercaseScore() {
-		List<String> words = sentenceToWords(sentence);
-
-		JSONObject json;
+	public boolean isPersonName(String word) {
+		boolean isPersonName = false;
 		try {
+			File f = new File("src/main/resources/isimler.txt");
+			BufferedReader b = new BufferedReader(new FileReader(f));
+			String readLine = "";
 
-			if (Character.isLetter(words.get(0).charAt(0))) {
-				json = readJsonFromUrl("http://sozluk.gov.tr/gts?ara=" + words.get(0).toLowerCase());
-				if (json.has("ozel_mi")) {
-					if (Integer.parseInt(json.get("ozel_mi").toString()) == 1) {
-						
-						score += scoreMap.get("uppercase");
-						System.out.println("uppercase score: "+scoreMap.get("uppercase"));
+			while ((readLine = b.readLine()) != null) {
+				Pattern p = Pattern.compile("\'([^\']*)\'");
+				Matcher m = p.matcher(readLine);
+				while (m.find()) {
+					if (m.group(1).toLowerCase().compareTo(word.toLowerCase()) == 0) {
+						isPersonName = true;
 					}
+					break;
 				}
-
-				json = readJsonFromUrl("http://sozluk.gov.tr/adlar?ara=" + words.get(0).toLowerCase()+"&gore=1&cins=4");
-				if (json.has("ad_id")) {
-					score += scoreMap.get("uppercase");
-
-					System.out.println("uppercase score: "+scoreMap.get("uppercase"));
-				}
-
 			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
+		return isPersonName;
+	}
+
+	public boolean isSpecialName(String word) {
+		JSONObject json;
+		boolean isSpecialName = false;
+		try {
+			json = readJsonFromUrl("http://sozluk.gov.tr/gts?ara=" + word.toLowerCase());
+			if (json.has("ozel_mi")) {
+				if (Integer.parseInt(json.get("ozel_mi").toString()) == 1) {
+					isSpecialName = true;
+				}
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
+		return isSpecialName;
+	}
 
-		
-		for (int i = 1; i < words.size(); i++) {
-			if (Character.isUpperCase(words.get(i).charAt(0))) {
-				score += (scoreMap.get("uppercase"));
-				System.out.println("uppercase score: "+scoreMap.get("uppercase"));
+	public boolean isContainFirstWord(String str) {
+		boolean isContainFirstWord = false;
+		List<String> words = sentenceToWords(sentence);
+		if (str.contains(" ")) {
+			String[] splitStr = str.split("\\s+");
+			if (words.get(0).compareTo(splitStr[0]) == 0) {
+				isContainFirstWord = true;
+			}
+		} else {
+			if (words.get(0).compareTo(str) == 0) {
+				isContainFirstWord = true;
 			}
 		}
 
+		return isContainFirstWord;
+	}
 
-		
+	public void addUppercaseScore() {
+		List<String> words = sentenceToWords(sentence);
+
+		String ozelIsim = "";
+		for (int i = 0; i < words.size(); i++) {
+			if (Character.isUpperCase(words.get(i).charAt(0))) {
+				ozelIsim += " " + words.get(i);
+			} else {
+				if (ozelIsim.compareTo("") != 0) {
+					uppercases.add(ozelIsim.replaceFirst("^ *", ""));
+				}
+
+				ozelIsim = "";
+			}
+		}
+
+		for (String u : uppercases) {
+
+			/*
+			 * if (isContainFirstWord(u)==false) { //ozelIsimler.add(u); }
+			 */
+			if (u.contains(" ")) {
+				String[] splitStr = u.split("\\s+");
+
+				for (String string : splitStr) {
+					if (isPersonName(string)) {
+						ozelIsimler.add(string);
+						// kelime zincirinde olduğu yere göre böl ve bölünen parçaları özel isimlere ekle
+
+					}
+				}
+			} else if (isPersonName(u) == true) {
+				ozelIsimler.add(u);
+			} else if (isSpecialName(u) == true) {
+				ozelIsimler.add(u);
+			}
+
+		}
+
 	}
 
 }

@@ -37,6 +37,20 @@ public class TextProcessing {
 		addAverageLengthScore();
 		setWordFrequencyMap(text);
 		setSentenceScores(title, text);
+		System.out.println();
+		System.out.println("Uppercases: ");
+		for (String string : SentenceProcessing.uppercases) {
+			System.out.println(string);
+		}
+		System.out.println();		
+		System.out.println("Özel isimler: ");
+		
+		for (String string : SentenceProcessing.ozelIsimler) {
+			System.out.println(string);
+		}
+		
+		
+		
 		
 	}
 	public static void setScoreMap() {
@@ -81,10 +95,10 @@ public class TextProcessing {
 		map.entrySet().forEach(entry -> {
 			if (paragraphs[0].contains(entry.getKey())) {
 				map.put(entry.getKey(), scoreMap.get("entry"));
-				System.out.println("entryScore: "+ scoreMap.get("entry"));
+				System.out.println(entry.getKey()+ ": entryScore: "+ scoreMap.get("entry"));
 			}else if (paragraphs[paragraphs.length-1].contains(entry.getKey())) {
 				map.put(entry.getKey(), scoreMap.get("result"));
-				System.out.println("resultScore: "+ scoreMap.get("result"));
+				System.out.println(entry.getKey()+": resultScore: "+ scoreMap.get("result"));
 			}	
 		});
 		
@@ -173,7 +187,7 @@ public class TextProcessing {
 	public static void main(String[] args) {
 		String title = "Konunun Belirlenmesi ";
 		
-		String text="Konu belirleme aş amasının 15 amacı parçadaki Mayıs en önemli konuların belirlenmesini sağlamaktır."
+		String text="Ağrı Dağı aşamasının 15 amacı parçadaki Mayıs en önemli konuların belirlenmesini sağlamaktır."
 				+ "Merve sağlamak için kelime frekanslarının hesaplanması, cümlenin bulunduğu yerin incelenmesi, "
 				+ "ipucu veren ifadelerden yararlanılması gibi Teknikler kullanılır.\r\n" + 
 				"\r\n" + 
@@ -182,7 +196,7 @@ public class TextProcessing {
 				 "\"Özetle\", \"En önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir! \r\n" + 
 				"\r\n" + 
 				"İstanbul çok sıkça kullanılan kelimeler, edat veya belirteç olmadıkları sürece, içinde bulundukları cümlelerin önemli olduklarını gösterebilirler. "
-				+ "Yoruma dayalı olan bu teknikte, karıştırma ve kaynaştırma yapılarak birbiriyle ilgili olan cümleler, daha genel cümleler ile ifade edilebilirler. ";
+				+ "Doğu Anadolu olan bu teknikte, karıştırma ve kaynaştırma yapılarak birbiriyle ilgili olan cümleler, daha genel cümleler ile ifade edilebilirler. ";
 
 
 		TextProcessing tp = new TextProcessing(title, text);
