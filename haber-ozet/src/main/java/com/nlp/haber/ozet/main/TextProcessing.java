@@ -24,35 +24,25 @@ public class TextProcessing {
 	public int summaryPercent;
 	public String title;
 	public String text;
-	public static String [] paragraphs;
-	
+	public static String[] paragraphs;
+
 	public TextProcessing(String title, String text) {
-		this.title=title;
-		this.text=text;
-		
+		this.title = title;
+		this.text = text;
+
 		setScoreMap();
 		splitToParagraphs(text);
 		splitToSentences(text);
-		addParagraphScore(map);
-		addAverageLengthScore();
+
+		for (String string : paragraphs) {
+			System.out.println(string);
+		}
+		// addAverageLengthScore();
 		setWordFrequencyMap(text);
 		setSentenceScores(title, text);
-		System.out.println();
-		System.out.println("Uppercases: ");
-		for (String string : SentenceProcessing.uppercases) {
-			System.out.println(string);
-		}
-		System.out.println();		
-		System.out.println("Özel isimler: ");
-		
-		for (String string : SentenceProcessing.ozelIsimler) {
-			System.out.println(string);
-		}
-		
-		
-		
-		
+
 	}
+
 	public static void setScoreMap() {
 		scoreMap.put("title", 20);
 		scoreMap.put("frequency", 10);
@@ -73,46 +63,66 @@ public class TextProcessing {
 	public static void splitToParagraphs(String text) {
 		String patternStr = "(?<=(\r\n|\r|\n))([ \\t]*$)+";
 		paragraphs = Pattern.compile(patternStr, Pattern.MULTILINE).split(text);
-		
-		for (int i=0; i<paragraphs.length; i++) {
-		    String paragraph = paragraphs[i];
-		    System.out.println("Paragraph: "+paragraph);
+
+		for (int i = 0; i < paragraphs.length; i++) {
+			String paragraph = paragraphs[i];
+			// System.out.println("Paragraph: "+paragraph);
 		}
 	}
 
 	public static void splitToSentences(String input) { // title ve input map e yerlestirilir
 		// map.put(title, 0);
 		TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
-		List<String> sentences = extractor.fromParagraph(input);	
+		List<String> sentences = extractor.fromParagraph(input);
 		for (String sentence : sentences) {
 			map.put(sentence, 0);
 		}
 	}
 
-	
-	public static void addParagraphScore(HashMap<String, Integer> map ) {
-			
-		map.entrySet().forEach(entry -> {
-			if (paragraphs[0].contains(entry.getKey())) {
-				map.put(entry.getKey(), scoreMap.get("entry"));
-				System.out.println(entry.getKey()+ ": entryScore: "+ scoreMap.get("entry"));
-			}else if (paragraphs[paragraphs.length-1].contains(entry.getKey())) {
-				map.put(entry.getKey(), scoreMap.get("result"));
-				System.out.println(entry.getKey()+": resultScore: "+ scoreMap.get("result"));
-			}	
-		});
-		
-		
-			
+	public static int getParagraphScore(String sentence) {
+		int paragraphScore = 0;
+
+		if (paragraphs[0].contains(sentence)) {
+			paragraphScore = scoreMap.get("entry");
+		} else if (paragraphs[paragraphs.length - 1].contains(sentence)) {
+			paragraphScore = scoreMap.get("result");
+		}
+
+		return paragraphScore;
+
 	}
-	
-	
+
+	public static int getAverageLengthScore(String sentence) {
+		int alScore = 0;
+		int counter = map.size();
+		int sum = 0;
+
+		for (Map.Entry<String, Integer> entry : map.entrySet()) {
+			sum = sum + entry.getKey().length();
+		}
+		int avg = sum / counter;
+
+		if (sentence.length() == avg - 1 || sentence.length() == avg + 1) {
+			alScore = scoreMap.get("averageLength");
+			System.out.println("averageLegnth Score: " + scoreMap.get("averageLength"));
+		}
+		return alScore;
+	}
+
 	public static void setSentenceScores(String title, String text) {
 		splitToSentences(text);
 
 		for (Entry<String, Integer> entry : map.entrySet()) {
+			System.out.println(
+					"---------------------------------------------------------------------------------------------------------");
 			SentenceProcessing processing = new SentenceProcessing(title, entry.getKey(), text);
-			map.replace(entry.getKey(), processing.getSentenceScore());
+			System.out.println("SENTENCE PROCESSING DONEN SONUC: " + processing.getSentenceScore());
+			// map.put(entry.getKey(), entry.getValue()+ processing.getSentenceScore());
+			int s = getParagraphScore(entry.getKey()) + processing.getSentenceScore()
+					+ getAverageLengthScore(entry.getKey());
+			map.put(entry.getKey(), s);
+			System.out.println(
+					"---------------------------------------------------------------------------------------------------------");
 		}
 
 	}
@@ -165,47 +175,26 @@ public class TextProcessing {
 		frequencyMap = (HashMap<String, Integer>) sortMapByValueDesc(frequencyMap);
 	}
 
-	public static void addAverageLengthScore() {
-		int counter = map.size();
-		int sum = 0;
-
-		for (Map.Entry<String, Integer> entry : map.entrySet()) {
-			sum = sum + entry.getKey().length();
-		}
-		int avg = sum / counter;
-
-		for (Map.Entry<String, Integer> entry : map.entrySet()) {
-			if (entry.getKey().length() == avg - 1 || entry.getKey().length() == avg + 1) {
-				int val = entry.getValue();
-				map.put(entry.getKey(), val + scoreMap.get("averageLength"));
-				System.out.println("averageLegnth Score: "+  scoreMap.get("averageLength") );
-			}
-		}
-	}
-
-	
 	public static void main(String[] args) {
 		String title = "Konunun Belirlenmesi ";
-		
-		String text="Ağrı Dağı aşamasının 15 amacı parçadaki Mayıs en önemli konuların belirlenmesini sağlamaktır."
-				+ "Merve sağlamak için kelime frekanslarının hesaplanması, cümlenin bulunduğu yerin incelenmesi, "
-				+ "ipucu veren ifadelerden yararlanılması gibi Teknikler kullanılır.\r\n" + 
-				"\r\n" + 
-				"Bazı yazı tiplerinde, yazının başlığı, yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili çünkü en önemli konuları barındırabilirler.\r\n" + 
-				"\r\n" + 
-				 "\"Özetle\", \"En önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir! \r\n" + 
-				"\r\n" + 
-				"İstanbul çok sıkça kullanılan kelimeler, edat veya belirteç olmadıkları sürece, içinde bulundukları cümlelerin önemli olduklarını gösterebilirler. "
+
+		String text = "Ağrı Dağı aşamasının 15 amacı parçadaki Mayıs en önemli konuların belirlenmesini sağlamaktır."
+				+ "Merve Yavuz sağlamak için kelime frekanslarının hesaplanması, cümlenin bulunduğu yerin incelenmesi, "
+				+ "ipucu veren ifadelerden yararlanılması gibi Teknikler kullanılır.\r\n" + "\r\n"
+				+ "Almanya yazı tiplerinde, yazının başlığı, yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili çünkü en önemli konuları barındırabilirler.\r\n"
+				+ "\r\n"
+				+ "\"Özetle\", \"En önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir! \r\n"
+				+ "\r\n"
+				+ "Tema Vakfı çok sıkça kullanılan kelimeler, edat veya belirteç olmadıkları sürece, içinde bulundukları cümlelerin önemli olduklarını gösterebilirler. "
 				+ "Doğu Anadolu olan bu teknikte, karıştırma ve kaynaştırma yapılarak birbiriyle ilgili olan cümleler, daha genel cümleler ile ifade edilebilirler. ";
 
-
 		TextProcessing tp = new TextProcessing(title, text);
+		System.out.println("**********************************");
 		map.entrySet().forEach(entry -> {
 			System.out.println("SENTENCE: " + entry.getKey() + " SCORE: " + entry.getValue());
 		});
+		System.out.println();
 
 	}
-	
-	
 
 }

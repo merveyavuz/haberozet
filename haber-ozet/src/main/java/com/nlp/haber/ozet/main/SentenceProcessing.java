@@ -12,18 +12,14 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import zemberek.morphology.TurkishMorphology;
 import zemberek.morphology.analysis.SingleAnalysis;
 import zemberek.morphology.analysis.WordAnalysis;
@@ -39,10 +35,10 @@ public class SentenceProcessing {
 	public static HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
 	public static List<String> yerTamlayanlar = Arrays.asList("dağı", "caddesi", "durağı", "cadde", "durak",
 			"tiyatrosu", "tiyatro", "nehri", "bulvarı", "bulvar", "uyruklu", "devleti", "boğazı", "sarayı", "gölü",
-			"kalesi", "köprüsü", "parkı", "ovası", "meydanı");
+			"kalesi", "köprüsü", "parkı", "ovası", "meydanı", "vakfı", "ltd");
 	public static List<String> yerYon = Arrays.asList("Kuzey", "Güney", "Doğu", "Batı");
 	public static LinkedHashSet<String> uppercases = new LinkedHashSet<String>();
-	public static LinkedHashSet<String> ozelIsimler = new LinkedHashSet<String>();
+	public LinkedHashSet<String> ozelIsimler = new LinkedHashSet<String>();
 
 	public SentenceProcessing() {
 
@@ -53,15 +49,15 @@ public class SentenceProcessing {
 		this.sentence = sentence;
 		System.out.println(sentence);
 		setScoreMap();
-		 addTitleScore(title, sentence);
-		 frequencyMap = TextProcessing.frequencyMap;
-		 addFrequencyScore(sentence, frequencyMap);
-		 addNumberScore(sentence);
-		 addQuotationMarkScore(sentence);
-		 addEndingMarkScore(sentence);
-		 addDayMonthScore(sentence);
-		 addPositiveScore();
-		 addNegativeScore();
+		addTitleScore(title, sentence);
+		frequencyMap = TextProcessing.frequencyMap;
+		addFrequencyScore(sentence, frequencyMap);
+		addNumberScore(sentence);
+		addQuotationMarkScore(sentence);
+		addEndingMarkScore(sentence);
+		addDayMonthScore(sentence);
+		addPositiveScore();
+		addNegativeScore();
 		addUppercaseScore();
 	}
 
@@ -339,17 +335,54 @@ public class SentenceProcessing {
 		boolean isContainFirstWord = false;
 		List<String> words = sentenceToWords(sentence);
 		if (str.contains(" ")) {
-			String[] splitStr = str.split("\\s+");
+			String[] splitStr = str.split(" ");
 			if (words.get(0).compareTo(splitStr[0]) == 0) {
 				isContainFirstWord = true;
 			}
 		} else {
-			if (words.get(0).compareTo(str) == 0) {
+			if (str.compareTo(words.get(0)) == 0) {
 				isContainFirstWord = true;
 			}
 		}
 
 		return isContainFirstWord;
+	}
+
+	public boolean isAllUppercase(String str) {
+		boolean isAllUppercase = true;
+
+		for (int i = 0; i < str.length(); i++) {
+			if (!Character.isUpperCase(str.charAt(i))) {
+				isAllUppercase = false;
+			}
+		}
+
+		return isAllUppercase;
+	}
+
+	public boolean isCountry(String str) {
+		boolean isCountry = false;
+
+		try {
+			File f = new File("src/main/resources/ulkeler.txt");
+			BufferedReader b = new BufferedReader(new FileReader(f));
+			String readLine = "";
+
+			while ((readLine = b.readLine()) != null) {
+				Pattern p = Pattern.compile("\'([^\']*)\'");
+				Matcher m = p.matcher(readLine);
+				while (m.find()) {
+					if (m.group(1).toLowerCase().compareTo(str.toLowerCase()) == 0) {
+						isCountry = true;
+					}
+					break;
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return isCountry;
 	}
 
 	public void addUppercaseScore() {
@@ -368,28 +401,65 @@ public class SentenceProcessing {
 			}
 		}
 
+		System.out.println("Uppercases: ");
+		for (String string : uppercases) {
+			System.out.println(string);
+		}
+		System.out.println();
 		for (String u : uppercases) {
-
-			/*
-			 * if (isContainFirstWord(u)==false) { //ozelIsimler.add(u); }
-			 */
 			if (u.contains(" ")) {
-				String[] splitStr = u.split("\\s+");
+				String[] splitStr = u.split(" ");
 
-				for (String string : splitStr) {
-					if (isPersonName(string)) {
-						ozelIsimler.add(string);
-						// kelime zincirinde olduğu yere göre böl ve bölünen parçaları özel isimlere ekle
-
+				for (int i = 0; i < splitStr.length; i++) {
+					if (isContainFirstWord(splitStr[0])) {
+						if (isSpecialName(splitStr[0])) {
+							ozelIsimler.add(u);
+						} else if (yerYon.contains(splitStr[0])) {
+							ozelIsimler.add(u);
+						}
 					}
+					if (isPersonName(splitStr[0])) {
+						ozelIsimler.add(u);
+					}
+					if (yerTamlayanlar.contains(splitStr[splitStr.length - 1].toLowerCase())) {
+						ozelIsimler.add(u);
+					}
+
 				}
+
 			} else if (isPersonName(u) == true) {
 				ozelIsimler.add(u);
 			} else if (isSpecialName(u) == true) {
 				ozelIsimler.add(u);
+			} else if (isContainFirstWord(u) == false) { // cumle ortasinda uppercase ise
+				ozelIsimler.add(u);
+			} else if (isAllUppercase(u)) { // Hepsi uppercase ise kisaltmadir
+				ozelIsimler.add(u);
+			} else if (isCountry(u)) {
+				ozelIsimler.add(u);
+			} else if (u.contains("deniz") || u.contains("köy")) {
+				ozelIsimler.add(u);
+			} else {
+				uppercases.remove(u);
 			}
 
 		}
+
+		System.out.println("Özel isimler:");
+		for (String string : ozelIsimler) {
+			System.out.println(string);
+		}
+
+		int counter = 0;
+		for (String oi : ozelIsimler) {
+			if (sentence.contains(oi)) {
+				counter++;
+			}
+		}
+
+		score += counter * (scoreMap.get("uppercase"));
+
+		System.out.println("Ozel isim score: " + counter * (scoreMap.get("uppercase")));
 
 	}
 
