@@ -50,15 +50,12 @@ public class SentenceProcessing {
 		this.sentence = sentence;
 		System.out.println(sentence);
 		setScoreMap();
-		addTitleScore(title, sentence);
-		frequencyMap = TextProcessing.frequencyMap;
-		addFrequencyScore(sentence, frequencyMap);
-		addNumberScore(sentence);
-		addQuotationMarkScore(sentence);
-		addEndingMarkScore(sentence);
-		addDayMonthScore(sentence);
-		addPositiveScore();
-		addNegativeScore();
+		
+		  addTitleScore(title, sentence); frequencyMap = TextProcessing.frequencyMap;
+		  addFrequencyScore(sentence, frequencyMap); addNumberScore(sentence);
+		  addQuotationMarkScore(sentence); addEndingMarkScore(sentence);
+		  addDayMonthScore(sentence); addPositiveScore(); addNegativeScore();
+		 
 		addUppercaseScore();
 	}
 
@@ -385,17 +382,17 @@ public class SentenceProcessing {
 
 		return isCountry;
 	}
-	
+
 	public boolean isTeam(String str) {
 		boolean isTeam = false;
 
 		try (BufferedReader br = new BufferedReader(new FileReader("src/main/resources/takimlar.txt"))) {
-		    String line;
-		    while ((line = br.readLine()) != null) {
-		       if (str.toLowerCase().compareTo(line.toLowerCase())==0) {
-		    	   isTeam=true;
-		       }
-		    }
+			String line;
+			while ((line = br.readLine()) != null) {
+				if (str.toLowerCase().compareTo(line.toLowerCase()) == 0) {
+					isTeam = true;
+				}
+			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -403,6 +400,27 @@ public class SentenceProcessing {
 		}
 
 		return isTeam;
+	}
+
+	public boolean isContainsSpecialName(String str) {
+		boolean isContainsSpecialName = false;
+		String[] splitStr = str.split(" ");
+
+		for (String string : splitStr) {
+			if (str.contains("'")) {
+				if (isSpecialName(str.split("'")[0])) {
+					if (isSpecialName(str.split("'")[0].toLowerCase())) {
+						isContainsSpecialName = true;
+					}
+				}
+			} else {
+				if (isSpecialName(string.toLowerCase())) {
+					isContainsSpecialName = true;
+				}
+			}
+
+		}
+		return isContainsSpecialName;
 	}
 
 	public void addUppercaseScore() {
@@ -421,60 +439,56 @@ public class SentenceProcessing {
 			}
 		}
 
-		System.out.println("Uppercases: ");
-		for (String string : uppercases) {
-			System.out.println(string);
-		}
-		System.out.println();
 		for (String u : uppercases) {
-			if (u.contains(" ")) {
+			if (u.contains(" ") && isContainFirstWord(u)) {
 				String[] splitStr = u.split(" ");
-
 				for (int i = 0; i < splitStr.length; i++) {
 					if (isContainFirstWord(splitStr[0])) {
 						if (isSpecialName(splitStr[0])) {
 							ozelIsimler.add(u);
 						} else if (yerYon.contains(splitStr[0])) {
 							ozelIsimler.add(u);
+						} else if (isPersonName(splitStr[0])) {
+							ozelIsimler.add(u);
+						} else if (yerTamlayanlar.contains(splitStr[splitStr.length - 1].toLowerCase())) {
+							ozelIsimler.add(u);
+						}else {
+							String[] splitStr2 = u.split(" ");					//Cumle basindaki kelime anlamsizsa onu atip gerisini ekler
+							String s =u.replaceFirst(splitStr2[0], "").trim();
+							ozelIsimler.add(s);
 						}
 					}
-					if (isPersonName(splitStr[0])) {
-						ozelIsimler.add(u);
-					}
-					if (yerTamlayanlar.contains(splitStr[splitStr.length - 1].toLowerCase())) {
-						ozelIsimler.add(u);
-					}
-
 				}
 
-			} else if (isPersonName(u)) {
-				ozelIsimler.add(u);
-			} else if (isSpecialName(u)) {
-				ozelIsimler.add(u);
-			} else if (isContainFirstWord(u) == false) { // cumle ortasinda uppercase ise
-				ozelIsimler.add(u);
-			} else if (isAllUppercase(u)) { // Hepsi uppercase ise kisaltmadir
-				ozelIsimler.add(u);
-			} else if (isCountry(u)) {
-				ozelIsimler.add(u);
-			} else if (u.contains("deniz") || u.contains("köy")) {
-				ozelIsimler.add(u);
-			}else if (isTeam(u)) {
-				ozelIsimler.add(u);
+			} else if (isContainFirstWord(u)) {
+				if (isPersonName(u)) {
+					ozelIsimler.add(u);
+				} else if (isSpecialName(u)) {
+					ozelIsimler.add(u);
+				} else if (isContainFirstWord(u) == false) { // cumle ortasinda uppercase ise
+					ozelIsimler.add(u);
+				} else if (isAllUppercase(u)) { // Hepsi uppercase ise kisaltmadir
+					ozelIsimler.add(u);
+				} else if (isCountry(u)) {
+					ozelIsimler.add(u);
+				} else if (u.contains("deniz") || u.contains("köy")) {
+					ozelIsimler.add(u);
+				} else if (isTeam(u)) {
+					ozelIsimler.add(u);
+				}else {
+					uppercases.remove(u);
+				}
 			} else {
-				uppercases.remove(u);
+				ozelIsimler.add(u);
 			}
 
 		}
 
-		System.out.println("Özel isimler:");
-		for (String string : ozelIsimler) {
-			System.out.println(string);
-		}
-
 		int counter = 0;
+		String s= sentence.replaceAll(",", "");
+		 s= s.replaceAll("\"", "");
 		for (String oi : ozelIsimler) {
-			if (sentence.contains(oi)) {
+			if (s.contains(oi)) {
 				counter++;
 			}
 		}

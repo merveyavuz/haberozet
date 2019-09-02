@@ -105,7 +105,6 @@ public class TextProcessing {
 			System.out.println(
 					"---------------------------------------------------------------------------------------------------------");
 			SentenceProcessing processing = new SentenceProcessing(title, entry.getKey(), text);
-			System.out.println("SENTENCE PROCESSING DONEN SONUC: " + processing.getSentenceScore());
 			// map.put(entry.getKey(), entry.getValue()+ processing.getSentenceScore());
 			int s = getParagraphScore(entry.getKey()) + processing.getSentenceScore()
 					+ getAverageLengthScore(entry.getKey());
@@ -168,11 +167,11 @@ public class TextProcessing {
 		String title = "Konunun Belirlenmesi ";
 
 		String text = "Ağrı Dağı aşamasının 15 amacı parçadaki Mayıs en önemli konuların belirlenmesini sağlamaktır."
-				+ "Merve Yavuz sağlamak için kelime frekanslarının hesaplanması, cümlenin bulunduğu yerin incelenmesi, "
+				+ "Merve Yavuz sağlamak için kelime frekanslarının Ahmet Ak, İstanbul'a hesaplanması, cümlenin bulunduğu yerin incelenmesi, "
 				+ "ipucu veren ifadelerden yararlanılması gibi Teknikler kullanılır.\r\n" + "\r\n"
-				+ "Galatasaray yazı tiplerinde, yazının başlığı, yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili çünkü en önemli konuları barındırabilirler.\r\n"
+				+ "Bazı yazı tiplerinde, yazının başlığı, yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili çünkü en önemli konuları barındırabilirler.\r\n"
 				+ "\r\n"
-				+ "\"Özetle\", \"En önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir! \r\n"
+				+ "\"Özetle\", \"Fatma önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir! \r\n"
 				+ "\r\n"
 				+ "Tema Vakfı çok sıkça kullanılan kelimeler, edat veya belirteç olmadıkları sürece, içinde bulundukları cümlelerin önemli olduklarını gösterebilirler. "
 				+ "Doğu Anadolu olan bu teknikte, karıştırma ve kaynaştırma yapılarak birbiriyle ilgili olan cümleler, daha genel cümleler ile ifade edilebilirler. ";
