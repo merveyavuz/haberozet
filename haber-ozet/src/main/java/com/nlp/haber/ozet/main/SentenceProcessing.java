@@ -2,6 +2,7 @@ package com.nlp.haber.ozet.main;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -384,6 +385,25 @@ public class SentenceProcessing {
 
 		return isCountry;
 	}
+	
+	public boolean isTeam(String str) {
+		boolean isTeam = false;
+
+		try (BufferedReader br = new BufferedReader(new FileReader("src/main/resources/takimlar.txt"))) {
+		    String line;
+		    while ((line = br.readLine()) != null) {
+		       if (str.toLowerCase().compareTo(line.toLowerCase())==0) {
+		    	   isTeam=true;
+		       }
+		    }
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return isTeam;
+	}
 
 	public void addUppercaseScore() {
 		List<String> words = sentenceToWords(sentence);
@@ -427,9 +447,9 @@ public class SentenceProcessing {
 
 				}
 
-			} else if (isPersonName(u) == true) {
+			} else if (isPersonName(u)) {
 				ozelIsimler.add(u);
-			} else if (isSpecialName(u) == true) {
+			} else if (isSpecialName(u)) {
 				ozelIsimler.add(u);
 			} else if (isContainFirstWord(u) == false) { // cumle ortasinda uppercase ise
 				ozelIsimler.add(u);
@@ -438,6 +458,8 @@ public class SentenceProcessing {
 			} else if (isCountry(u)) {
 				ozelIsimler.add(u);
 			} else if (u.contains("deniz") || u.contains("köy")) {
+				ozelIsimler.add(u);
+			}else if (isTeam(u)) {
 				ozelIsimler.add(u);
 			} else {
 				uppercases.remove(u);

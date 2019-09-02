@@ -33,14 +33,8 @@ public class TextProcessing {
 		setScoreMap();
 		splitToParagraphs(text);
 		splitToSentences(text);
-
-		for (String string : paragraphs) {
-			System.out.println(string);
-		}
-		// addAverageLengthScore();
 		setWordFrequencyMap(text);
 		setSentenceScores(title, text);
-
 	}
 
 	public static void setScoreMap() {
@@ -63,11 +57,6 @@ public class TextProcessing {
 	public static void splitToParagraphs(String text) {
 		String patternStr = "(?<=(\r\n|\r|\n))([ \\t]*$)+";
 		paragraphs = Pattern.compile(patternStr, Pattern.MULTILINE).split(text);
-
-		for (int i = 0; i < paragraphs.length; i++) {
-			String paragraph = paragraphs[i];
-			// System.out.println("Paragraph: "+paragraph);
-		}
 	}
 
 	public static void splitToSentences(String input) { // title ve input map e yerlestirilir
@@ -181,7 +170,7 @@ public class TextProcessing {
 		String text = "Ağrı Dağı aşamasının 15 amacı parçadaki Mayıs en önemli konuların belirlenmesini sağlamaktır."
 				+ "Merve Yavuz sağlamak için kelime frekanslarının hesaplanması, cümlenin bulunduğu yerin incelenmesi, "
 				+ "ipucu veren ifadelerden yararlanılması gibi Teknikler kullanılır.\r\n" + "\r\n"
-				+ "Almanya yazı tiplerinde, yazının başlığı, yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili çünkü en önemli konuları barındırabilirler.\r\n"
+				+ "Galatasaray yazı tiplerinde, yazının başlığı, yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili çünkü en önemli konuları barındırabilirler.\r\n"
 				+ "\r\n"
 				+ "\"Özetle\", \"En önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir! \r\n"
 				+ "\r\n"
@@ -189,7 +178,6 @@ public class TextProcessing {
 				+ "Doğu Anadolu olan bu teknikte, karıştırma ve kaynaştırma yapılarak birbiriyle ilgili olan cümleler, daha genel cümleler ile ifade edilebilirler. ";
 
 		TextProcessing tp = new TextProcessing(title, text);
-		System.out.println("**********************************");
 		map.entrySet().forEach(entry -> {
 			System.out.println("SENTENCE: " + entry.getKey() + " SCORE: " + entry.getValue());
 		});
