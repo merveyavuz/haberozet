@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
@@ -21,10 +22,14 @@ public class TextProcessing {
 	public static HashMap<String, Integer> scoreMap = new HashMap<String, Integer>();
 	public static TurkishTokenizer tokenizer = TurkishTokenizer.DEFAULT;
 	public static HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
-	public int summaryPercent;
+	public static List<String> sortedSentences = new ArrayList<String>();
+	public static List<String> summarySentences = new ArrayList<String>();
+	public static List<String> sortedSummarySentences = new ArrayList<String>();
+	// public int summaryPercent;
 	public String title;
 	public String text;
 	public static String[] paragraphs;
+	public static int lineNo = 0;
 
 	public TextProcessing(String title, String text) {
 		this.title = title;
@@ -32,9 +37,8 @@ public class TextProcessing {
 
 		setScoreMap();
 		splitToParagraphs(text);
-		splitToSentences(text);
 		setWordFrequencyMap(text);
-		setSentenceScores(title, text);
+	setSentenceScores(title, text);
 	}
 
 	public static void setScoreMap() {
@@ -64,7 +68,8 @@ public class TextProcessing {
 		TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
 		List<String> sentences = extractor.fromParagraph(input);
 		for (String sentence : sentences) {
-			map.put(sentence, 0);
+			lineNo++;
+			map.put(lineNo + "#" + sentence, 0);
 		}
 	}
 
@@ -83,11 +88,13 @@ public class TextProcessing {
 
 	public static int getAverageLengthScore(String sentence) {
 		int alScore = 0;
-		int counter = map.size();
+		int counter = map.size() - 2;
 		int sum = 0;
 
 		for (Map.Entry<String, Integer> entry : map.entrySet()) {
-			sum = sum + entry.getKey().length();
+			String sent = entry.getKey().split("#")[1];
+			// sum = sum + entry.getKey().length();
+			sum = sum + sent.length();
 		}
 		int avg = sum / counter;
 
@@ -103,14 +110,16 @@ public class TextProcessing {
 
 		for (Entry<String, Integer> entry : map.entrySet()) {
 			System.out.println(
-					"---------------------------------------------------------------------------------------------------------");
-			SentenceProcessing processing = new SentenceProcessing(title, entry.getKey(), text);
+					"------------------------------------------------------------------------------------------------------");
+			String sent = entry.getKey().split("#")[1];
+			SentenceProcessing processing = new SentenceProcessing(title, sent, text);
+			// SentenceProcessing processing = new SentenceProcessing(title, entry.getKey(),
+			// text);
 			// map.put(entry.getKey(), entry.getValue()+ processing.getSentenceScore());
-			int s = getParagraphScore(entry.getKey()) + processing.getSentenceScore()
-					+ getAverageLengthScore(entry.getKey());
+			int s = getParagraphScore(sent) + processing.getSentenceScore() + getAverageLengthScore(sent);
 			map.put(entry.getKey(), s);
 			System.out.println(
-					"---------------------------------------------------------------------------------------------------------");
+					"------------------------------------------------------------------------------------------------------");
 		}
 
 	}
@@ -163,24 +172,77 @@ public class TextProcessing {
 		frequencyMap = (HashMap<String, Integer>) sortMapByValueDesc(frequencyMap);
 	}
 
-	public static void main(String[] args) {
-		String title = "Konunun Belirlenmesi ";
+	public static void sortMapToList() {
+		List<Integer> numbers = new ArrayList<Integer>();
+		for (String s : summarySentences) {
+			String sent = s.split("#")[1];
+			String sentNo = s.split("#")[0];
+			numbers.add(Integer.parseInt(sentNo));
+		}
+		;
+		Collections.sort(numbers);
+		for (int n : numbers) {
+			map.entrySet().forEach(entry -> {
+				String sent = entry.getKey().split("#")[1];
+				String sentNo = entry.getKey().split("#")[0];
+				if (n == Integer.parseInt(sentNo)) {
+					sortedSentences.add(entry.getKey());
+				}
+			});
+		}
 
-		String text = "Ağrı Dağı aşamasının 15 amacı parçadaki Mayıs en önemli konuların belirlenmesini sağlamaktır."
-				+ "Merve Yavuz sağlamak için kelime frekanslarının Ahmet Ak, İstanbul'a hesaplanması, cümlenin bulunduğu yerin incelenmesi, "
-				+ "ipucu veren ifadelerden yararlanılması gibi Teknikler kullanılır.\r\n" + "\r\n"
-				+ "Bazı yazı tiplerinde, yazının başlığı, yazının ilk cümlesi gibi kritik pozisyonlar yazıyla ilgili çünkü en önemli konuları barındırabilirler.\r\n"
-				+ "\r\n"
-				+ "\"Özetle\", \"Fatma önemlisi\", \"Sonuç olarak\" gibi ipucu veren ifadeler yazıyla ilgili önemli noktaları gösteren işaretler olabilir! \r\n"
-				+ "\r\n"
-				+ "Tema Vakfı çok sıkça kullanılan kelimeler, edat veya belirteç olmadıkları sürece, içinde bulundukları cümlelerin önemli olduklarını gösterebilirler. "
-				+ "Doğu Anadolu olan bu teknikte, karıştırma ve kaynaştırma yapılarak birbiriyle ilgili olan cümleler, daha genel cümleler ile ifade edilebilirler. ";
+	}
+
+	public static void setSummarySentences(int percent) {
+		int summary = map.keySet().size() - ((map.keySet().size() * percent) / 100);
+
+		map = (HashMap<String, Integer>) sortMapByValueDesc(map);
+		System.out.println("SORTED MAP: ");
+		map.entrySet().forEach(entry -> {
+			System.out.println(entry.getKey());
+			summarySentences.add(entry.getKey());
+		});
+		
+		for(int i = 0; i < summary; i++) {
+			sortedSummarySentences.add(summarySentences.get(i));
+		}
+		
+		Collections.sort(sortedSummarySentences, new Comparator<String>() {
+	        public int compare(String o1, String o2) {
+	            return extractInt(o1) - extractInt(o2);
+	        }
+
+	        int extractInt(String s) {
+	        	String num = s.split("#")[0];
+	            return num.isEmpty() ? 0 : Integer.parseInt(num);
+	        }
+	    });
+	    
+	    
+	}
+
+	public static void main(String[] args) {
+		String title = "Haber Yazısı Ve Özellikleri";
+
+		String text = "Bir olay ya da olgu üzerine edinilen bilgiye haber denir. Bu bilginin gazete, dergi gibi yayın organlarıyla ya da radyo, televizyon gibi iletişim araçlarıyla topluma sunulmak üzere yazılı metin hâline getirilmesine de haber yazısı adı verilir.\r\n" + 
+				"\r\n" + 
+				"Tarih boyunca insanlar iletişim ihtiyacını karşılamak için çeşitli yollar aramış bu amaçla kil tabletlere, ceylan derilerine ve kayalara yazılarını yazmışlardır. Matbaanın icadıyla yazın hayatında önemli değişiklikler olmuş zamanla gazetecilik ortaya çıkmıştır. Gazeteler iletişim araçlarının yaygın olmadığı dönemlerde yegâne iletişim aracı olarak kullanılmıştır.\r\n" + 
+				"\r\n" + 
+				"Kitle iletişim araçlarının gelişmesi ile birlikte haber ve habere ulaşma yolları değişmiştir. Günümüzde insanlar gazete, TV ve İnternet ile iletişim ihtiyaçlarını karşılamaktadırlar. Habere ulaşmanın çok kolay olduğu günümüzde habere hızlı ve güvenilir kaynaklardan ulaşabilmek daha da önemli hâle gelmiştir. Habere sahip olan birey ve toplumlar, yaşamın değişen ve gelişen koşullarını hızla yorumlayıp uyum sağlayabilmekte ve böylelikle siyasi, ekonomik, sosyal ve kültürel alanlarda avantajlı konuma gelebilmektedir.\r\n" + 
+				"\r\n" + 
+				"Haber, kaynağını yaşamdan alır ve özellikle çok hızlı değişimlerin olduğu günümüz dünyasında habersiz kalmak, adeta yaşamın dışında kalmak anlamına gelmektedir. Günümüzde sayıları her geçen gün artan yazılı, görsel ve işitsel yayın organları, topluma haber iletmekte ve insanları yaşananlardan haberdar etmektedir.";
 
 		TextProcessing tp = new TextProcessing(title, text);
 		map.entrySet().forEach(entry -> {
 			System.out.println("SENTENCE: " + entry.getKey() + " SCORE: " + entry.getValue());
 		});
 		System.out.println();
+		setSummarySentences(50);
+		
+		System.out.println("Sıralanmış özet cümleleri: ");
+		for (String ss : sortedSummarySentences) {
+			System.out.println(ss);
+		}
 
 	}
 

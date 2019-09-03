@@ -50,12 +50,16 @@ public class SentenceProcessing {
 		this.sentence = sentence;
 		System.out.println(sentence);
 		setScoreMap();
-		
-		  addTitleScore(title, sentence); frequencyMap = TextProcessing.frequencyMap;
-		  addFrequencyScore(sentence, frequencyMap); addNumberScore(sentence);
-		  addQuotationMarkScore(sentence); addEndingMarkScore(sentence);
-		  addDayMonthScore(sentence); addPositiveScore(); addNegativeScore();
-		 
+
+		addTitleScore(title, sentence);
+		frequencyMap = TextProcessing.frequencyMap;
+		addFrequencyScore(sentence, frequencyMap);
+		addNumberScore(sentence);
+		addQuotationMarkScore(sentence);
+		addEndingMarkScore(sentence);
+		addDayMonthScore(sentence);
+		addPositiveScore();
+		addNegativeScore();
 		addUppercaseScore();
 	}
 
@@ -315,7 +319,7 @@ public class SentenceProcessing {
 		JSONObject json;
 		boolean isSpecialName = false;
 		try {
-			json = readJsonFromUrl("http://sozluk.gov.tr/gts?ara=" + word.toLowerCase());
+			json = readJsonFromUrl("https://sozluk.gov.tr/gts?ara=" + word.toLowerCase());
 			if (json.has("ozel_mi")) {
 				if (Integer.parseInt(json.get("ozel_mi").toString()) == 1) {
 					isSpecialName = true;
@@ -452,9 +456,10 @@ public class SentenceProcessing {
 							ozelIsimler.add(u);
 						} else if (yerTamlayanlar.contains(splitStr[splitStr.length - 1].toLowerCase())) {
 							ozelIsimler.add(u);
-						}else {
-							String[] splitStr2 = u.split(" ");					//Cumle basindaki kelime anlamsizsa onu atip gerisini ekler
-							String s =u.replaceFirst(splitStr2[0], "").trim();
+						} else {
+							String[] splitStr2 = u.split(" "); // Cumle basindaki kelime anlamsizsa onu atip gerisini
+																// ekler
+							String s = u.replaceFirst(splitStr2[0], "").trim();
 							ozelIsimler.add(s);
 						}
 					}
@@ -475,8 +480,8 @@ public class SentenceProcessing {
 					ozelIsimler.add(u);
 				} else if (isTeam(u)) {
 					ozelIsimler.add(u);
-				}else {
-					uppercases.remove(u);
+				} else {
+				//	uppercases.remove(u);
 				}
 			} else {
 				ozelIsimler.add(u);
@@ -485,8 +490,8 @@ public class SentenceProcessing {
 		}
 
 		int counter = 0;
-		String s= sentence.replaceAll(",", "");
-		 s= s.replaceAll("\"", "");
+		String s = sentence.replaceAll(",", "");
+		s = s.replaceAll("\"", "");
 		for (String oi : ozelIsimler) {
 			if (s.contains(oi)) {
 				counter++;
