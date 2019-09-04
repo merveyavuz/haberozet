@@ -1,9 +1,12 @@
 package model;
 
+import com.nlp.haber.ozet.main.TextProcessing;
+
 public class Haber {
 
 	String baslik;
 	String icerik;
+
 	public String getBaslik() {
 		return baslik;
 	}

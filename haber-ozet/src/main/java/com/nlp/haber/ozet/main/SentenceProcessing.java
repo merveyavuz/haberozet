@@ -10,6 +10,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,6 +26,9 @@ import org.json.JSONObject;
 import zemberek.morphology.TurkishMorphology;
 import zemberek.morphology.analysis.SingleAnalysis;
 import zemberek.morphology.analysis.WordAnalysis;
+import zemberek.ner.NamedEntity;
+import zemberek.ner.NerSentence;
+import zemberek.ner.PerceptronNer;
 import zemberek.tokenization.Token;
 import zemberek.tokenization.TurkishTokenizer;
 
@@ -32,13 +37,13 @@ public class SentenceProcessing {
 	public String title;
 	public String sentence;
 	public int score;
-	public static HashMap<String, Integer> scoreMap = new HashMap<String, Integer>();
-	public static HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
-	public static List<String> yerTamlayanlar = Arrays.asList("dağı", "caddesi", "durağı", "cadde", "durak",
+	public HashMap<String, Integer> scoreMap = new HashMap<String, Integer>();
+	public HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
+	public List<String> yerTamlayanlar = Arrays.asList("dağı", "caddesi", "durağı", "cadde", "durak",
 			"tiyatrosu", "tiyatro", "nehri", "bulvarı", "bulvar", "uyruklu", "devleti", "boğazı", "sarayı", "gölü",
 			"kalesi", "köprüsü", "parkı", "ovası", "meydanı", "vakfı", "ltd");
-	public static List<String> yerYon = Arrays.asList("Kuzey", "Güney", "Doğu", "Batı");
-	public static LinkedHashSet<String> uppercases = new LinkedHashSet<String>();
+	public List<String> yerYon = Arrays.asList("Kuzey", "Güney", "Doğu", "Batı");
+	public LinkedHashSet<String> uppercases = new LinkedHashSet<String>();
 	public LinkedHashSet<String> ozelIsimler = new LinkedHashSet<String>();
 	public LinkedHashSet<String> removeItems = new LinkedHashSet<String>();
 	public SentenceProcessing() {
@@ -63,7 +68,7 @@ public class SentenceProcessing {
 		addUppercaseScore();
 	}
 
-	public static void setScoreMap() {
+	public void setScoreMap() {
 		scoreMap.put("title", 20);
 		scoreMap.put("frequency", 10);
 		scoreMap.put("entry", 20);
@@ -426,8 +431,38 @@ public class SentenceProcessing {
 		}
 		return isContainsSpecialName;
 	}
+	
+	public void addNamedEntitesToUppercases(String sentence) {
+		Path modelRoot = Paths.get("my-model");
+
+		TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
+
+		PerceptronNer ner;
+		try {
+			ner = PerceptronNer.loadModel(modelRoot, morphology);
+			
+			System.out.println(sentence);
+			NerSentence result = ner.findNamedEntities(sentence);
+			List<NamedEntity> namedEntities = result.getNamedEntities();
+
+			for (NamedEntity namedEntity : namedEntities) {
+				uppercases.add(namedEntity.content());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		
+	}
 
 	public void addUppercaseScore() {
+		addNamedEntitesToUppercases(sentence);
+		
+		System.out.println("*********Uppercases:");
+		for (String u : uppercases) {
+			System.out.println(u);
+		}
+		System.out.println("********");
 		List<String> words = sentenceToWords(sentence);
 
 		String ozelIsim = "";
@@ -472,7 +507,7 @@ public class SentenceProcessing {
 					ozelIsimler.add(u);
 				} else if (isContainFirstWord(u) == false) { // cumle ortasinda uppercase ise
 					ozelIsimler.add(u);
-				} else if (isAllUppercase(u)) { // Hepsi uppercase ise kisaltmadir
+				} else if (isAllUppercase(u) && u.length()>0) { // Hepsi uppercase ise kisaltmadir
 					ozelIsimler.add(u);
 				} else if (isCountry(u)) {
 					ozelIsimler.add(u);

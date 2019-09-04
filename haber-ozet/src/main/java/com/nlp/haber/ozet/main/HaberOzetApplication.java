@@ -40,7 +40,7 @@ public class HaberOzetApplication {
 	
 	public static void main(String[] args) {
 		SpringApplication.run(HaberOzetApplication.class, args);
-		
+	/*	
 		 Path trainPath = Paths.get("src/main/resources/ner-train.txt");
 		    Path testPath = Paths.get("src/main/resources/ner-test.txt");
 		    Path modelRoot = Paths.get("my-model");
@@ -79,7 +79,7 @@ public class HaberOzetApplication {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		  
+		  */
 		    
 	}
 
