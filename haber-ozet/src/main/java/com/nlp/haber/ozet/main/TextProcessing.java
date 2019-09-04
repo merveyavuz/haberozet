@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import zemberek.tokenization.TurkishSentenceExtractor;
 import zemberek.tokenization.TurkishTokenizer;
@@ -22,10 +21,8 @@ public class TextProcessing {
 	public static HashMap<String, Integer> scoreMap = new HashMap<String, Integer>();
 	public static TurkishTokenizer tokenizer = TurkishTokenizer.DEFAULT;
 	public static HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
-	public static List<String> sortedSentences = new ArrayList<String>();
 	public static List<String> summarySentences = new ArrayList<String>();
 	public static List<String> sortedSummarySentences = new ArrayList<String>();
-	// public int summaryPercent;
 	public String title;
 	public String text;
 	public static String[] paragraphs;
@@ -38,7 +35,7 @@ public class TextProcessing {
 		setScoreMap();
 		splitToParagraphs(text);
 		setWordFrequencyMap(text);
-	setSentenceScores(title, text);
+		setSentenceScores(title, text);
 	}
 
 	public static void setScoreMap() {
@@ -78,8 +75,10 @@ public class TextProcessing {
 
 		if (paragraphs[0].contains(sentence)) {
 			paragraphScore = scoreMap.get("entry");
+			System.out.println("Paragraph Score: " + paragraphScore);
 		} else if (paragraphs[paragraphs.length - 1].contains(sentence)) {
 			paragraphScore = scoreMap.get("result");
+			System.out.println("Paragraph Score: " + paragraphScore);
 		}
 
 		return paragraphScore;
@@ -109,17 +108,12 @@ public class TextProcessing {
 		splitToSentences(text);
 
 		for (Entry<String, Integer> entry : map.entrySet()) {
-			System.out.println(
-					"------------------------------------------------------------------------------------------------------");
+			System.out.println("----------------------------------------------------------------------------------");
 			String sent = entry.getKey().split("#")[1];
 			SentenceProcessing processing = new SentenceProcessing(title, sent, text);
-			// SentenceProcessing processing = new SentenceProcessing(title, entry.getKey(),
-			// text);
-			// map.put(entry.getKey(), entry.getValue()+ processing.getSentenceScore());
 			int s = getParagraphScore(sent) + processing.getSentenceScore() + getAverageLengthScore(sent);
 			map.put(entry.getKey(), s);
-			System.out.println(
-					"------------------------------------------------------------------------------------------------------");
+			System.out.println("----------------------------------------------------------------------------------");
 		}
 
 	}
@@ -172,27 +166,6 @@ public class TextProcessing {
 		frequencyMap = (HashMap<String, Integer>) sortMapByValueDesc(frequencyMap);
 	}
 
-	public static void sortMapToList() {
-		List<Integer> numbers = new ArrayList<Integer>();
-		for (String s : summarySentences) {
-			String sent = s.split("#")[1];
-			String sentNo = s.split("#")[0];
-			numbers.add(Integer.parseInt(sentNo));
-		}
-		;
-		Collections.sort(numbers);
-		for (int n : numbers) {
-			map.entrySet().forEach(entry -> {
-				String sent = entry.getKey().split("#")[1];
-				String sentNo = entry.getKey().split("#")[0];
-				if (n == Integer.parseInt(sentNo)) {
-					sortedSentences.add(entry.getKey());
-				}
-			});
-		}
-
-	}
-
 	public static void setSummarySentences(int percent) {
 		int summary = map.keySet().size() - ((map.keySet().size() * percent) / 100);
 
@@ -202,35 +175,34 @@ public class TextProcessing {
 			System.out.println(entry.getKey());
 			summarySentences.add(entry.getKey());
 		});
-		
-		for(int i = 0; i < summary; i++) {
+
+		for (int i = 0; i < summary; i++) {
 			sortedSummarySentences.add(summarySentences.get(i));
 		}
-		
-		Collections.sort(sortedSummarySentences, new Comparator<String>() {
-	        public int compare(String o1, String o2) {
-	            return extractInt(o1) - extractInt(o2);
-	        }
 
-	        int extractInt(String s) {
-	        	String num = s.split("#")[0];
-	            return num.isEmpty() ? 0 : Integer.parseInt(num);
-	        }
-	    });
-	    
-	    
+		Collections.sort(sortedSummarySentences, new Comparator<String>() {
+			public int compare(String o1, String o2) {
+				return extractInt(o1) - extractInt(o2);
+			}
+
+			int extractInt(String s) {
+				String num = s.split("#")[0];
+				return num.isEmpty() ? 0 : Integer.parseInt(num);
+			}
+		});
+
 	}
 
 	public static void main(String[] args) {
 		String title = "Haber Yazısı Ve Özellikleri";
 
-		String text = "Bir olay ya da olgu üzerine edinilen bilgiye haber denir. Bu bilginin gazete, dergi gibi yayın organlarıyla ya da radyo, televizyon gibi iletişim araçlarıyla topluma sunulmak üzere yazılı metin hâline getirilmesine de haber yazısı adı verilir.\r\n" + 
-				"\r\n" + 
-				"Tarih boyunca insanlar iletişim ihtiyacını karşılamak için çeşitli yollar aramış bu amaçla kil tabletlere, ceylan derilerine ve kayalara yazılarını yazmışlardır. Matbaanın icadıyla yazın hayatında önemli değişiklikler olmuş zamanla gazetecilik ortaya çıkmıştır. Gazeteler iletişim araçlarının yaygın olmadığı dönemlerde yegâne iletişim aracı olarak kullanılmıştır.\r\n" + 
-				"\r\n" + 
-				"Kitle iletişim araçlarının gelişmesi ile birlikte haber ve habere ulaşma yolları değişmiştir. Günümüzde insanlar gazete, TV ve İnternet ile iletişim ihtiyaçlarını karşılamaktadırlar. Habere ulaşmanın çok kolay olduğu günümüzde habere hızlı ve güvenilir kaynaklardan ulaşabilmek daha da önemli hâle gelmiştir. Habere sahip olan birey ve toplumlar, yaşamın değişen ve gelişen koşullarını hızla yorumlayıp uyum sağlayabilmekte ve böylelikle siyasi, ekonomik, sosyal ve kültürel alanlarda avantajlı konuma gelebilmektedir.\r\n" + 
-				"\r\n" + 
-				"Haber, kaynağını yaşamdan alır ve özellikle çok hızlı değişimlerin olduğu günümüz dünyasında habersiz kalmak, adeta yaşamın dışında kalmak anlamına gelmektedir. Günümüzde sayıları her geçen gün artan yazılı, görsel ve işitsel yayın organları, topluma haber iletmekte ve insanları yaşananlardan haberdar etmektedir.";
+		String text = "Bir olay ya da olgu üzerine edinilen bilgiye haber denir. Bu bilginin gazete, dergi gibi yayın organlarıyla ya da radyo, televizyon gibi iletişim araçlarıyla topluma sunulmak üzere yazılı metin hâline getirilmesine de haber yazısı adı verilir.\r\n"
+				+ "\r\n"
+				+ "Tarih boyunca insanlar iletişim ihtiyacını karşılamak için çeşitli yollar aramış bu amaçla kil tabletlere, ceylan derilerine ve kayalara yazılarını yazmışlardır. Matbaanın icadıyla yazın hayatında önemli değişiklikler olmuş zamanla gazetecilik ortaya çıkmıştır. Gazeteler iletişim araçlarının yaygın olmadığı dönemlerde yegâne iletişim aracı olarak kullanılmıştır.\r\n"
+				+ "\r\n"
+				+ "Kitle iletişim araçlarının gelişmesi ile birlikte haber ve habere ulaşma yolları değişmiştir. Günümüzde insanlar gazete, TV ve İnternet ile iletişim ihtiyaçlarını karşılamaktadırlar. Habere ulaşmanın çok kolay olduğu günümüzde habere hızlı ve güvenilir kaynaklardan ulaşabilmek daha da önemli hâle gelmiştir. Habere sahip olan birey ve toplumlar, yaşamın değişen ve gelişen koşullarını hızla yorumlayıp uyum sağlayabilmekte ve böylelikle siyasi, ekonomik, sosyal ve kültürel alanlarda avantajlı konuma gelebilmektedir.\r\n"
+				+ "\r\n"
+				+ "Haber, kaynağını yaşamdan alır ve özellikle çok hızlı değişimlerin olduğu günümüz dünyasında habersiz kalmak, adeta yaşamın dışında kalmak anlamına gelmektedir. Günümüzde sayıları her geçen gün artan yazılı, görsel ve işitsel yayın organları, topluma haber iletmekte ve insanları yaşananlardan haberdar etmektedir.";
 
 		TextProcessing tp = new TextProcessing(title, text);
 		map.entrySet().forEach(entry -> {
@@ -238,7 +210,8 @@ public class TextProcessing {
 		});
 		System.out.println();
 		setSummarySentences(50);
-		
+
+		System.out.println();
 		System.out.println("Sıralanmış özet cümleleri: ");
 		for (String ss : sortedSummarySentences) {
 			System.out.println(ss);

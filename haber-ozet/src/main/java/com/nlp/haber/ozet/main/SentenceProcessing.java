@@ -40,7 +40,7 @@ public class SentenceProcessing {
 	public static List<String> yerYon = Arrays.asList("Kuzey", "Güney", "Doğu", "Batı");
 	public static LinkedHashSet<String> uppercases = new LinkedHashSet<String>();
 	public LinkedHashSet<String> ozelIsimler = new LinkedHashSet<String>();
-
+	public LinkedHashSet<String> removeItems = new LinkedHashSet<String>();
 	public SentenceProcessing() {
 
 	}
@@ -481,14 +481,24 @@ public class SentenceProcessing {
 				} else if (isTeam(u)) {
 					ozelIsimler.add(u);
 				} else {
-				//	uppercases.remove(u);
+					removeItems.add(u);
 				}
 			} else {
 				ozelIsimler.add(u);
 			}
 
 		}
+		
+		for (String ri : removeItems) {
+			if (uppercases.contains(ri)) {
+				uppercases.remove(ri);
+			}
+		}
 
+		System.out.println("Özel isimler: ");
+		for (String string : ozelIsimler) {
+			System.out.println(string);
+		}
 		int counter = 0;
 		String s = sentence.replaceAll(",", "");
 		s = s.replaceAll("\"", "");
