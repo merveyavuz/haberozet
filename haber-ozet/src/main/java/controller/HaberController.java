@@ -33,31 +33,19 @@ public class HaberController {
 		return hs.getAll();
 	}
 
-	@RequestMapping("{baslik}")
-	public Haber getHaber(@PathVariable("baslik") String baslik) {
-		return hs.getHaber(baslik);
-	}
-
-	/*
-	 * @GetMapping("/addHaber") public String sendForm(Haber haber) {
-	 * 
-	 * return "addHaber"; }
-	 */
 	@PostMapping("/addHaber")
-//	public Haber processForm(@RequestBody Haber haber) {
-	public OzetResponse processForm(@RequestBody Haber haber) {		
-	
-		String title= haber.getBaslik();
+	public OzetResponse processForm(@RequestBody Haber haber) {
+
+		String title = haber.getBaslik();
 		String text = haber.getIcerik();
-		
-		TextProcessing tp= new TextProcessing(title, text);
+
+		TextProcessing tp = new TextProcessing(title, text);
 		String summary = tp.getSummary();
-		
+
 		OzetResponse ozet = new OzetResponse();
 		ozet.setOzet(summary);
-		
+
 		return ozet;
-		//return haber;
 	}
 
 }

@@ -17,32 +17,36 @@ import zemberek.tokenization.TurkishTokenizer;
 
 public class TextProcessing {
 
-	public  HashMap<String, Integer> map;
-	public  HashMap<String, Integer> scoreMap ;
-	public  TurkishTokenizer tokenizer ;
-	public  static HashMap<String, Integer> frequencyMap ;
-	
-
-	public  List<String> summarySentences;
-	public  List<String> sortedSummarySentences ;
+	public HashMap<String, Integer> map;
+	public HashMap<String, Integer> scoreMap;
+	public TurkishTokenizer tokenizer;
+	public static HashMap<String, Integer> frequencyMap;
+	public List<String> summarySentences;
+	public List<String> sortedSummarySentences;
 	public String title;
 	public String text;
 	public String summary;
-	public  String[] paragraphs;
-	public  int lineNo = 0;
+	public String[] paragraphs;
+	public int lineNo = 0;
+	public TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
+	public List<String> sentences;
+	
+	public TextProcessing() {
+	}
 
-	public TextProcessing() {}
 	public TextProcessing(String title, String text) {
 		this.title = title;
 		this.text = text;
-		this.summary="";
-		this.map= new HashMap<String, Integer>();
-		this.scoreMap= new HashMap<String, Integer>();
-		this.tokenizer= TurkishTokenizer.DEFAULT;
-		this.frequencyMap= new HashMap<String, Integer>();
+		this.summary = "";
+		this.map = new HashMap<String, Integer>();
+		this.scoreMap = new HashMap<String, Integer>();
+		this.tokenizer = TurkishTokenizer.DEFAULT;
+		this.frequencyMap = new HashMap<String, Integer>();
 		this.summarySentences = new ArrayList<String>();
-		this.sortedSummarySentences= new ArrayList<String>();
-	
+		this.sortedSummarySentences = new ArrayList<String>();
+
+		sentences = extractor.fromParagraph(text);
+
 		setScoreMap();
 		splitToParagraphs(text);
 		setWordFrequencyMap(text);
@@ -51,29 +55,26 @@ public class TextProcessing {
 		setSummary();
 	}
 
-	public  void setScoreMap() {
+	public void setScoreMap() {
 		scoreMap.put("frequency", 10);
 		scoreMap.put("entry", 20);
 		scoreMap.put("result", 2);
 		scoreMap.put("averageLength", 10);
 	}
 
-	public  void splitToParagraphs(String text) {
+	public void splitToParagraphs(String text) {
 		String patternStr = "(?<=(\r\n|\r|\n))([ \\t]*$)+";
 		paragraphs = Pattern.compile(patternStr, Pattern.MULTILINE).split(text);
 	}
 
-	public  void splitToSentences(String input) { // title ve input map e yerlestirilir
-		// map.put(title, 0);
-		TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
-		List<String> sentences = extractor.fromParagraph(input);
+	public void splitToSentences(String input) { // title ve input map e yerlestirilir
 		for (String sentence : sentences) {
 			lineNo++;
 			map.put(lineNo + "#" + sentence, 0);
 		}
 	}
 
-	public  int getParagraphScore(String sentence) {
+	public int getParagraphScore(String sentence) {
 		int paragraphScore = 0;
 
 		if (paragraphs[0].contains(sentence)) {
@@ -88,7 +89,7 @@ public class TextProcessing {
 
 	}
 
-	public  int getAverageLengthScore(String sentence) {
+	public int getAverageLengthScore(String sentence) {
 		int alScore = 0;
 		int counter = map.size() - 2;
 		int sum = 0;
@@ -106,7 +107,7 @@ public class TextProcessing {
 		return alScore;
 	}
 
-	public  void setSentenceScores(String title, String text) {
+	public void setSentenceScores(String title, String text) {
 		splitToSentences(text);
 
 		for (Entry<String, Integer> entry : map.entrySet()) {
@@ -136,9 +137,8 @@ public class TextProcessing {
 		return result;
 	}
 
-	public  void setWordFrequencyMap(String text) {
-		TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
-		List<String> sentences = extractor.fromParagraph(text);
+	public void setWordFrequencyMap(String text) {
+		System.out.println("frekans için tüm textin köke ayrılması başladı");
 		List<String> allWords = new ArrayList<String>();
 		List<String> stemWords = new ArrayList<String>();
 
@@ -166,15 +166,16 @@ public class TextProcessing {
 		}
 
 		frequencyMap = (HashMap<String, Integer>) sortMapByValueDesc(frequencyMap);
+		System.out.println("frekans için tüm textin köke ayrılması bitti.");
 	}
 
-	public  void setSummarySentences(int percent) {
+	public void setSummarySentences(int percent) {
 		int summary = map.keySet().size() - ((map.keySet().size() * percent) / 100);
 
 		map = (HashMap<String, Integer>) sortMapByValueDesc(map);
 		System.out.println("SORTED MAP: ");
 		map.entrySet().forEach(entry -> {
-			System.out.println(entry.getKey());
+			System.out.println(entry.getKey()+ ": "+entry.getValue());
 			summarySentences.add(entry.getKey());
 		});
 
@@ -195,55 +196,16 @@ public class TextProcessing {
 
 	}
 
-	
 	public void setSummary() {
 		for (String ss : sortedSummarySentences) {
 			ss = ss.split("#")[1];
-			summary+=" "+ss;
+			summary += " " + ss;
 		}
-		summary= summary.trim();
+		summary = summary.trim();
 	}
-	
+
 	public String getSummary() {
 		return summary;
-	}
-	
-	public static void main(String[] args) {
-	//	String title = "Haber Yazısı Ve Özellikleri";
-
-	/*	String text = "Bir olay ya da olgu üzerine edinilen bilgiye haber denir. Bu bilginin gazete, dergi gibi yayın organlarıyla ya da radyo, televizyon gibi iletişim araçlarıyla topluma sunulmak üzere yazılı metin hâline getirilmesine de haber yazısı adı verilir.\r\n"
-				+ "\r\n"
-				+ "Tarih boyunca insanlar iletişim ihtiyacını karşılamak için çeşitli yollar aramış bu amaçla kil tabletlere, ceylan derilerine ve kayalara yazılarını yazmışlardır. Matbaanın icadıyla yazın hayatında önemli değişiklikler olmuş zamanla gazetecilik ortaya çıkmıştır. Gazeteler iletişim araçlarının yaygın olmadığı dönemlerde yegâne iletişim aracı olarak kullanılmıştır.\r\n"
-				+ "\r\n"
-				+ "Kitle iletişim araçlarının gelişmesi ile birlikte haber ve habere ulaşma yolları değişmiştir. Günümüzde insanlar gazete, TV ve İnternet ile iletişim ihtiyaçlarını karşılamaktadırlar. Habere ulaşmanın çok kolay olduğu günümüzde habere hızlı ve güvenilir kaynaklardan ulaşabilmek daha da önemli hâle gelmiştir. Habere sahip olan birey ve toplumlar, yaşamın değişen ve gelişen koşullarını hızla yorumlayıp uyum sağlayabilmekte ve böylelikle siyasi, ekonomik, sosyal ve kültürel alanlarda avantajlı konuma gelebilmektedir.\r\n"
-				+ "\r\n"
-				+ "Haber, kaynağını yaşamdan alır ve özellikle çok hızlı değişimlerin olduğu günümüz dünyasında habersiz kalmak, adeta yaşamın dışında kalmak anlamına gelmektedir. Günümüzde sayıları her geçen gün artan yazılı, görsel ve işitsel yayın organları, topluma haber iletmekte ve insanları yaşananlardan haberdar etmektedir.";
-*/
-	/*	String title="Yangın Nedeniyle Binada Mahsur Kaldı";
-		String text="Şişli’de, 7 katlı boş bir binanın en son katında henüz belirlenemeyen bir nedenle yangın çıktı. Hurda toplayan bir kişi 6. katta mahsur kalınca, itfaiye ekipleri tarafından merdiven yardımıyla kurtarıldı.\r\n" + 
-				"\r\n" + 
-				"Yangın, saat 17.30 sıralarında Halaskargazi Caddesi 196 numaradaki binada meydana geldi. "
-				+ "Bir süre önce boşaltıldığı öğrenilen binanın son katında henüz belirlenemeyen bir nedenle yangın çıktı. "
-				+ "O sırada hurda topladığı iddia edilen bir kişi duman yüzünden binada mahsur kaldı. "
-				+ "Binadaki dumanı gören çevredeki vatandaşlar durumu itfaiye ekiplerine bildirdi. "
-				+ "Olay yerine gelen itfaiye ekipleri bir yandan yangına müdahale ederken, bir yandan da merdiven yardımıyla 6. katta mahsur kalan kişiyi kurtardı. "
-				+ "Hayati tehlikesi bulunmadığı belirtilen bu kişi Şişli Hamidiye Etfal Eğitim ve Araştırma Hastanesi’ne kaldırıldı.";
-		TextProcessing tp = new TextProcessing(title, text);
-		map.entrySet().forEach(entry -> {
-			System.out.println("SENTENCE: " + entry.getKey() + " SCORE: " + entry.getValue());
-		});
-		System.out.println();
-		setSummarySentences(50);
-
-		System.out.println();
-		System.out.println("Sıralanmış özet cümleleri: ");
-		for (String ss : sortedSummarySentences) {
-			System.out.println(ss);
-		}
-		
-	*/
-		
-
 	}
 
 }

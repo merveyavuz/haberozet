@@ -41,11 +41,17 @@ public class SentenceProcessing {
 	public HashMap<String, Integer> frequencyMap = new HashMap<String, Integer>();
 	public List<String> yerTamlayanlar = Arrays.asList("dağı", "caddesi", "durağı", "cadde", "durak",
 			"tiyatrosu", "tiyatro", "nehri", "bulvarı", "bulvar", "uyruklu", "devleti", "boğazı", "sarayı", "gölü",
-			"kalesi", "köprüsü", "parkı", "ovası", "meydanı", "vakfı", "ltd");
+			"kalesi", "köprüsü", "parkı", "ovası", "meydanı", "vakfı", "ltd","hastanesi");
 	public List<String> yerYon = Arrays.asList("Kuzey", "Güney", "Doğu", "Batı");
 	public LinkedHashSet<String> uppercases = new LinkedHashSet<String>();
 	public LinkedHashSet<String> ozelIsimler = new LinkedHashSet<String>();
 	public LinkedHashSet<String> removeItems = new LinkedHashSet<String>();
+	public List<String> titleWords;
+	public List<String> sentenceWords;
+	public List<String> titleStems;
+	public List<String> sentenceStems;
+	public TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
+	
 	public SentenceProcessing() {
 
 	}
@@ -55,7 +61,13 @@ public class SentenceProcessing {
 		this.sentence = sentence;
 		System.out.println(sentence);
 		setScoreMap();
-
+		titleWords = sentenceToWords(title);
+		titleWords = removeStopWords(titleWords);
+		sentenceWords = sentenceToWords(sentence);
+		sentenceWords = removeStopWords(sentenceWords);
+		titleStems = sentenceStems(sentenceToWords(title));
+		sentenceStems = sentenceStems(sentenceToWords(sentence));
+		
 		addTitleScore(title, sentence);
 		frequencyMap = TextProcessing.frequencyMap;
 		addFrequencyScore(sentence, frequencyMap);
@@ -101,19 +113,22 @@ public class SentenceProcessing {
 	}
 
 	public List<String> sentenceStems(List<String> sentence) { // gelen cumledeki kelimeler koklerine ayrilir
+		System.out.println("Cümledeki kelimeleri köke ayırma başladı.");
 		List<String> sentenceStems = new ArrayList<String>();
 		for (String word : sentence) {
 			sentenceStems.add(wordToStem(word));
 		}
+		System.out.println("Cümledeki kelimeleri köke ayırma bitti.");
 		return sentenceStems;
+		
 	}
 
 	public String wordToStem(String word) { // gelen kelime kokune ayrilir
-		TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
 		WordAnalysis results = morphology.analyze(word);
 		String stem = "";
 		for (SingleAnalysis result : results) {
-			stem = result.getStem();
+			List <String> lemmas= result.getLemmas();
+			   stem=lemmas.get(0);
 		}
 		return stem;
 	}
@@ -128,16 +143,14 @@ public class SentenceProcessing {
 	}
 
 	public void addTitleScore(String title, String input) {
-		List<String> baseList = sentenceToWords(title);
-		baseList = removeStopWords(baseList);
-
-		List<String> compareList = sentenceToWords(input);
-		compareList = removeStopWords(compareList);
-
-		baseList = sentenceStems(sentenceToWords(title));
-		compareList = sentenceStems(sentenceToWords(input));
-
-		baseList.retainAll(compareList); // İki dizinin ortak kelimelerini tutar
+		
+		List<String> baseList=titleStems;
+		baseList.retainAll(sentenceStems);
+		
+		System.out.println("Title ve sentence ortak kelimeleri:");
+		for (String string : baseList) {
+			System.out.println(string);
+		}
 
 		int counter = baseList.size(); // Ortak kelime kadar puan degeri alacagindan counter tutulur.
 		if (counter > 0) {
@@ -148,10 +161,7 @@ public class SentenceProcessing {
 	}
 
 	public void addFrequencyScore(String sentence, HashMap<String, Integer> frequencyMap) {
-
-		List<String> words = sentenceToWords(sentence);
-		words = removeStopWords(words);
-		words = sentenceStems(words);
+		List<String> words=sentenceStems;
 
 		int percent = 10;
 		int limit = (frequencyMap.keySet().size() * percent) / 100;
@@ -222,7 +232,7 @@ public class SentenceProcessing {
 				"Eylül", "Ekim", "Kasım", "Aralık", "Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma",
 				"Cumartesi" };
 
-		List<String> words = sentenceToWords(sentence);
+		List<String> words = sentenceWords;
 		int counter = 0;
 		for (String w : words) {
 			for (String sw : searchWords) {
@@ -239,7 +249,7 @@ public class SentenceProcessing {
 	public void addPositiveScore() {
 		String[] searchWords = new String[] { "özetle", "sonuç", "neticede", "sonuçta", "önemlisi", "kısaca" };
 
-		List<String> words = sentenceToWords(sentence);
+		List<String> words = sentenceWords;
 		int counter = 0;
 		for (String w : words) {
 			for (String sw : searchWords) {
@@ -256,7 +266,7 @@ public class SentenceProcessing {
 	public void addNegativeScore() {
 		String[] searchWords = new String[] { "çünkü", "ancak", "öyleyse", "öyle" };
 
-		List<String> words = sentenceToWords(sentence);
+		List<String> words = sentenceWords;
 		int counter = 0;
 		for (String w : words) {
 			for (String sw : searchWords) {
@@ -340,7 +350,7 @@ public class SentenceProcessing {
 
 	public boolean isContainFirstWord(String str) {
 		boolean isContainFirstWord = false;
-		List<String> words = sentenceToWords(sentence);
+		List<String> words = sentenceWords;
 		if (str.contains(" ")) {
 			String[] splitStr = str.split(" ");
 			if (words.get(0).compareTo(splitStr[0]) == 0) {
@@ -435,8 +445,6 @@ public class SentenceProcessing {
 	public void addNamedEntitesToUppercases(String sentence) {
 		Path modelRoot = Paths.get("my-model");
 
-		TurkishMorphology morphology = TurkishMorphology.createWithDefaults();
-
 		PerceptronNer ner;
 		try {
 			ner = PerceptronNer.loadModel(modelRoot, morphology);
@@ -463,8 +471,8 @@ public class SentenceProcessing {
 			System.out.println(u);
 		}
 		System.out.println("********");
-		List<String> words = sentenceToWords(sentence);
-
+		List<String> words = sentenceWords;
+		
 		String ozelIsim = "";
 		for (int i = 0; i < words.size(); i++) {
 			if (Character.isUpperCase(words.get(i).charAt(0))) {
@@ -530,17 +538,10 @@ public class SentenceProcessing {
 			}
 		}
 
-		System.out.println("Özel isimler: ");
-		for (String string : ozelIsimler) {
-			System.out.println(string);
-		}
-		int counter = 0;
-		String s = sentence.replaceAll(",", "");
-		s = s.replaceAll("\"", "");
+		int counter = 0;		
+	
 		for (String oi : ozelIsimler) {
-			if (s.contains(oi)) {
 				counter++;
-			}
 		}
 
 		score += counter * (scoreMap.get("uppercase"));
