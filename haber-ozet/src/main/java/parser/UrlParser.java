@@ -41,7 +41,7 @@ public class UrlParser {
 		Document document;
 		try {
 			document = Jsoup
-					.connect("http://www.hurriyet.com.tr/ekonomi/son-dakika-istanbul-metrosunda-isik-gorundu-41323085")
+					.connect(url)
 					.get();
 			Elements eles = document.select("div.rhd-all-article-detail strong");
 			for (Element e : eles) {
