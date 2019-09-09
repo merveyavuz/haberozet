@@ -45,8 +45,8 @@ public class TextProcessing {
 		this.summarySentences = new ArrayList<String>();
 		this.sortedSummarySentences = new ArrayList<String>();
 
-		sentences = extractor.fromParagraph(text);
-
+		text= removeSubTitles(text);
+		sentences = extractor.fromParagraph(text);	
 		setScoreMap();
 		splitToParagraphs(text);
 		setWordFrequencyMap(text);
@@ -60,6 +60,25 @@ public class TextProcessing {
 		scoreMap.put("entry", 20);
 		scoreMap.put("result", 2);
 		scoreMap.put("averageLength", 10);
+	}
+	
+	public String removeSubTitles(String text) {
+		String [] split = text.split("\n");
+		List<String> subTitles= new ArrayList<String>();
+		
+		for (String str : split) {
+			if (!str.contains(".")  && !str.contains(":") && str.compareTo("")!=0) {
+				subTitles.add(str);
+			}
+		}
+		
+		String txt=text;
+		for (String st : subTitles) {
+			System.out.println("replaced: "+ st);
+			txt=txt.replace(st, "");		
+		}
+		
+		return txt;	
 	}
 
 	public void splitToParagraphs(String text) {
