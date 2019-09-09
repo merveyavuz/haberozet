@@ -18,6 +18,8 @@ import com.nlp.haber.ozet.main.TextProcessing;
 
 import model.Haber;
 import model.OzetResponse;
+import model.Url;
+import parser.UrlParser;
 import service.HaberService;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -35,9 +37,28 @@ public class HaberController {
 
 	@PostMapping("/addHaber")
 	public OzetResponse processForm(@RequestBody Haber haber) {
-
+		System.out.println("processform çalıştı");
 		String title = haber.getBaslik();
 		String text = haber.getIcerik();
+
+		TextProcessing tp = new TextProcessing(title, text);
+		String summary = tp.getSummary();
+
+		OzetResponse ozet = new OzetResponse();
+		ozet.setOzet(summary);
+
+		return ozet;
+	}
+	
+	@PostMapping("/addLink")
+	public OzetResponse processLinkForm(@RequestBody Url u) {
+		System.out.println("proseslink çalıştı");
+		String url= u.getUrl();
+		System.out.println("url: "+url);
+		UrlParser parser= new UrlParser(url);
+		
+		String title = parser.getpTitle();
+		String text = parser.getpText();
 
 		TextProcessing tp = new TextProcessing(title, text);
 		String summary = tp.getSummary();

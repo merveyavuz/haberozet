@@ -113,12 +113,10 @@ public class SentenceProcessing {
 	}
 
 	public List<String> sentenceStems(List<String> sentence) { // gelen cumledeki kelimeler koklerine ayrilir
-		System.out.println("Cümledeki kelimeleri köke ayırma başladı.");
 		List<String> sentenceStems = new ArrayList<String>();
 		for (String word : sentence) {
 			sentenceStems.add(wordToStem(word));
 		}
-		System.out.println("Cümledeki kelimeleri köke ayırma bitti.");
 		return sentenceStems;
 		
 	}
@@ -466,11 +464,6 @@ public class SentenceProcessing {
 	public void addUppercaseScore() {
 		addNamedEntitesToUppercases(sentence);
 		
-		System.out.println("*********Uppercases:");
-		for (String u : uppercases) {
-			System.out.println(u);
-		}
-		System.out.println("********");
 		List<String> words = sentenceWords;
 		
 		String ozelIsim = "";
@@ -487,6 +480,9 @@ public class SentenceProcessing {
 		}
 
 		for (String u : uppercases) {
+			if (u.contains("'")) {
+				u = u.substring(0, u.indexOf("'"));
+			}
 			if (u.contains(" ") && isContainFirstWord(u)) {
 				String[] splitStr = u.split(" ");
 				for (int i = 0; i < splitStr.length; i++) {
@@ -538,6 +534,12 @@ public class SentenceProcessing {
 			}
 		}
 
+		System.out.println("Özel isimler:");
+		for (String u : ozelIsimler) {
+			System.out.println(u);
+		}
+		System.out.println("");
+		
 		int counter = 0;		
 	
 		for (String oi : ozelIsimler) {
