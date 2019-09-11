@@ -30,7 +30,7 @@ public class TextProcessing {
 	public int lineNo = 0;
 	public TurkishSentenceExtractor extractor = TurkishSentenceExtractor.DEFAULT;
 	public List<String> sentences;
-	
+	public HashMap<String, Integer> finalMap;
 	public TextProcessing() {
 	}
 
@@ -44,6 +44,7 @@ public class TextProcessing {
 		this.frequencyMap = new HashMap<String, Integer>();
 		this.summarySentences = new ArrayList<String>();
 		this.sortedSummarySentences = new ArrayList<String>();
+		finalMap=new HashMap<String, Integer>();
 
 		text= removeSubTitles(text);
 		sentences = extractor.fromParagraph(text);	
@@ -86,10 +87,43 @@ public class TextProcessing {
 		paragraphs = Pattern.compile(patternStr, Pattern.MULTILINE).split(text);
 	}
 
+	public static boolean isClosed(String sentence) {
+		int count = 0;
+		for (char ch : sentence.toCharArray()) {
+			if (ch == '"') {
+				count++;
+			}
+		}
+		// System.out.println(count);
+
+		boolean isClosed = true;
+		if (count % 2 != 0) {
+			isClosed = false;
+		}
+		return isClosed;
+	}
+	
 	public void splitToSentences(String input) { // title ve input map e yerlestirilir
 		for (String sentence : sentences) {
 			lineNo++;
-			map.put(lineNo + "#" + sentence, 0);
+			//map.put(lineNo + "#" + sentence, 0);
+			
+			if (isClosed(sentence)) {
+				map.put(lineNo + "#" + sentence, 0);
+			}else {
+				 if(sentence.charAt(0)=='"' && Character.isUpperCase(sentence.split("\\W+")[1].charAt(0))){
+					sentence= sentence.substring(1);
+					map.put(lineNo + "#" + sentence, 0);
+					
+				}else if (sentence.charAt(sentence.length()-1)!='"') {
+					sentence=sentence+"\"";
+					map.put(lineNo + "#" + sentence, 0);
+				}else {
+					map.put(lineNo + "#" + sentence, 0);
+				}
+				
+			}
+			
 		}
 	}
 
@@ -125,6 +159,8 @@ public class TextProcessing {
 		}
 		return alScore;
 	}
+	
+	
 
 	public void setSentenceScores(String title, String text) {
 		splitToSentences(text);
@@ -135,6 +171,8 @@ public class TextProcessing {
 			SentenceProcessing processing = new SentenceProcessing(title, sent, text);
 			int s = getParagraphScore(sent) + processing.getSentenceScore() + getAverageLengthScore(sent);
 			map.put(entry.getKey(), s);
+			
+			
 			System.out.println("----------------------------------------------------------------------------------");
 		}
 
