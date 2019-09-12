@@ -54,11 +54,15 @@ public class HaberController {
 	public OzetResponse processLinkForm(@RequestBody Url u) {
 		System.out.println("proseslink çalıştı");
 		String url= u.getUrl();
+		String brand =u.getBrand();
 		System.out.println("url: "+url);
-		UrlParser parser= new UrlParser(url);
+		System.out.println("brand: "+brand);
+		UrlParser parser= new UrlParser(url,brand);
 		
 		String title = parser.getpTitle();
 		String text = parser.getpText();
+		System.out.println("Title:"+title);
+		System.out.println("Text: "+text);
 
 		TextProcessing tp = new TextProcessing(title, text);
 		String summary = tp.getSummary();

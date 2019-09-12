@@ -13,6 +13,7 @@ public class UrlParser {
 	public String url;
 	public String pTitle;
 	public String pText;
+	public String brand;
 
 	public String getpTitle() {
 		return pTitle;
@@ -30,29 +31,48 @@ public class UrlParser {
 		this.pText = pText;
 	}
 
-	public UrlParser(String url) {
+	public UrlParser(String url, String brand) {
 		this.url = url;
+		this.brand = brand;
 		parse();
 	}
 
 	public void parse() {
-		List<String> subTitles = new ArrayList<String>();
+		String div = "";
+		String divElement = "";
+		String parseTag = "";
+		if (brand.compareTo("hürriyet") == 0) {
+			div = "div.rhd-all-article-detail strong";
+			divElement = ".rhd-all-article-detail";
+			parseTag = "p";
+		} else if (brand.compareTo("milliyet") == 0) {
+			div = "div.nd-content-column";
+			divElement = ".nd-content-column";
+			parseTag = "p";
+		} else if (brand.compareTo("sabah") == 0) {
+			div = "div.detay";
+			divElement = ".detay";
+			parseTag = "p";
+		} else if (brand.compareTo("posta") == 0) {
+			div = "div.news-detail__body__content";
+			divElement = ".news-detail__body__content";
+			parseTag = "p";
+		}
 
+		List<String> subTitles = new ArrayList<String>();
 		Document document;
 		try {
-			document = Jsoup
-					.connect(url)
-					.get();
-			Elements eles = document.select("div.rhd-all-article-detail strong");
+			document = Jsoup.connect(url).get();
+			Elements eles = document.select(div);
 			for (Element e : eles) {
 				subTitles.add(e.text());
 				System.out.println(e.text());
 			}
-			pTitle = document.title(); // Get title
+			pTitle = document.title();
 
-			Elements html = document.select(".rhd-all-article-detail"); // Get price
+			Elements html = document.select(divElement);
 			Document doc = Jsoup.parse(html.toString());
-			Elements link = doc.select("p");
+			Elements link = doc.select(parseTag);
 
 			String text = "";
 

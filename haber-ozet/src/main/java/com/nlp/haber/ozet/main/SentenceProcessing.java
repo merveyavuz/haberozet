@@ -85,15 +85,12 @@ public class SentenceProcessing {
 		scoreMap.put("frequency", 10);
 		scoreMap.put("entry", 20);
 		scoreMap.put("result", 2);
-		scoreMap.put("keyword", 8);
 		scoreMap.put("uppercase", 3);
 		scoreMap.put("positive", 15);
 		scoreMap.put("negative", -20);
-		scoreMap.put("collocation", 4);
 		scoreMap.put("number", 3);
 		scoreMap.put("quotationMark", 2);
 		scoreMap.put("endingMark", 2);
-		scoreMap.put("averageLength", 10);
 		scoreMap.put("dayMonth", 5);
 	}
 
@@ -262,7 +259,7 @@ public class SentenceProcessing {
 	}
 
 	public void addNegativeScore() {
-		String[] searchWords = new String[] { "çünkü", "ancak", "öyleyse", "öyle" };
+		String[] searchWords = new String[] { "çünkü", "ancak", "öyleyse", "öyle","halbuki" };
 
 		List<String> words = sentenceWords;
 		int counter = 0;
