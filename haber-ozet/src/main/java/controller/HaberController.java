@@ -85,7 +85,7 @@ public class HaberController {
 	}
 
 	  
-	@PostMapping("/addFile")
+/*	@PostMapping("/addFile")
 	public OzetResponse uploadFile(@RequestParam("file") MultipartFile file) {
 
 		System.out.println("addFiles'a geldi");
@@ -105,8 +105,22 @@ public class HaberController {
 			System.out.println("file hatası");
 			return ozet;
 		}
-	}
+	}*/
 	
+	@PostMapping("/addFile")
+	public OzetResponse processFile(@RequestBody Haber haber) {
+		System.out.println("processfile çalıştı");
+		String title = haber.getBaslik();
+		String text = haber.getIcerik();
+
+		TextProcessing tp = new TextProcessing(title, text);
+		String summary = tp.getSummary();
+
+		OzetResponse ozet = new OzetResponse();
+		ozet.setOzet(summary);
+
+		return ozet;
+	}
 
 
 }
