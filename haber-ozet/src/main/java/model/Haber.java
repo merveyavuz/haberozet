@@ -4,6 +4,15 @@ public class Haber {
 
 	String baslik;
 	String icerik;
+	int ozetYuzdesi;
+
+	public int getOzetYuzdesi() {
+		return ozetYuzdesi;
+	}
+
+	public void setOzetYuzdesi(int ozetYuzdesi) {
+		this.ozetYuzdesi = ozetYuzdesi;
+	}
 
 	public String getBaslik() {
 		return baslik;

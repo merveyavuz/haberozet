@@ -2,28 +2,12 @@ package controller;
 
 import java.util.Hashtable;
 
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.http.HttpServletRequest;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartResolver;
 
 import com.nlp.haber.ozet.main.TextProcessing;
 
@@ -51,8 +35,9 @@ public class HaberController {
 		System.out.println("processform çalıştı");
 		String title = haber.getBaslik();
 		String text = haber.getIcerik();
+		int per= haber.getOzetYuzdesi();
 
-		TextProcessing tp = new TextProcessing(title, text);
+		TextProcessing tp = new TextProcessing(title, text,per);
 		String summary = tp.getSummary();
 
 		OzetResponse ozet = new OzetResponse();
@@ -75,7 +60,7 @@ public class HaberController {
 		System.out.println("Title:" + title);
 		System.out.println("Text: " + text);
 
-		TextProcessing tp = new TextProcessing(title, text);
+		TextProcessing tp = new TextProcessing(title, text,50);
 		String summary = tp.getSummary();
 
 		OzetResponse ozet = new OzetResponse();
@@ -113,7 +98,7 @@ public class HaberController {
 		String title = haber.getBaslik();
 		String text = haber.getIcerik();
 
-		TextProcessing tp = new TextProcessing(title, text);
+		TextProcessing tp = new TextProcessing(title, text,50);
 		String summary = tp.getSummary();
 
 		OzetResponse ozet = new OzetResponse();
@@ -121,6 +106,7 @@ public class HaberController {
 
 		return ozet;
 	}
+
 
 
 }

@@ -34,7 +34,7 @@ public class TextProcessing {
 	public TextProcessing() {
 	}
 
-	public TextProcessing(String title, String text) {
+	public TextProcessing(String title, String text, int per) {
 		this.title = title;
 		this.text = text;
 		this.summary = "";
@@ -52,7 +52,7 @@ public class TextProcessing {
 		splitToParagraphs(text);
 		setWordFrequencyMap(text);
 		setSentenceScores(title, text);
-		setSummarySentences(50);
+		setSummarySentences(per);
 		setSummary();
 	}
 
@@ -68,8 +68,10 @@ public class TextProcessing {
 		List<String> subTitles= new ArrayList<String>();
 		
 		for (String str : split) {
+			System.out.println("line:"+str);
 			if (!str.contains(".")  && !str.contains(":") && str.compareTo("")!=0) {
 				subTitles.add(str);
+				System.out.println("subtitle: "+str);
 			}
 		}
 		
